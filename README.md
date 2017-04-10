@@ -3,10 +3,12 @@
 
 ## Summary
 ______
+
 We will implement an iOS application which uses the Metal framework to generate photo mosaics in parallel on-demand. Using the photos already in the device's Photo Library, Mosaix will reconstruct the photo by selecting photos which match in color, shape, and contrast and placing them in a grid pattern representing the original image.
 
-<img src="http://download2.artensoft.com/artensoft_com/ArtensoftPhotoMosaicWizard/gallery/flower_cat_1920.jpg" style="width: 300px; display: block; margin: 30px auto;" />
-
+<p align="center">
+  <img width="350" src="http://download2.artensoft.com/artensoft_com/ArtensoftPhotoMosaicWizard/gallery/flower_cat_1920.jpg">
+</p>
 
 ## Background
 ______
