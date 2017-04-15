@@ -9,12 +9,14 @@
 import UIKit
 import Metal
 
-class ViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+class ChoosePhotoViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
     
     // The Metal device we use to perform Metal operations
     var device: MTLDevice!
+    var imagePicker = UIImagePickerController()
     
-
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         device = MTLCreateSystemDefaultDevice()
@@ -26,42 +28,41 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
         // Dispose of any resources that can be recreated.
     }
     
-    @IBOutlet var imageView: UIImageView!
-    var imagePicker = UIImagePickerController()
-    
     @IBAction func chooseImage() {
         
         if UIImagePickerController.isSourceTypeAvailable(.savedPhotosAlbum) {
-            print("Button capture")
-            
             imagePicker.delegate = self
-            imagePicker.sourceType = .savedPhotosAlbum;
             imagePicker.allowsEditing = false
+            imagePicker.sourceType = .savedPhotosAlbum
             
-            self.present(imagePicker, animated: true, completion: nil)
+            present(imagePicker, animated: true, completion: nil)
+            
         }
     }
+    
     
     @IBAction func takePicture() {
         if UIImagePickerController.isSourceTypeAvailable(.camera) {
-            print("Photo capture")
             imagePicker.delegate = self
-            imagePicker.sourceType = .camera
             imagePicker.allowsEditing = false
+            imagePicker.sourceType = .camera
             
-            self.present(imagePicker, animated: true, completion: nil)
+            present(imagePicker, animated: true, completion: nil)
         }
     }
     
-    func imagePickerController(picker: UIImagePickerController!, didFinishPickingImage image: UIImage!, editingInfo: NSDictionary!){
-        print("OK DONE!!!")
-        self.dismiss(animated: true, completion: { () -> Void in
-            
-        })
-        
-        imageView.image = image
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
+        if let pickedImage = info[UIImagePickerControllerOriginalImage] as? UIImage{
+            dismiss(animated: true, completion: { self.performSegue(withIdentifier: "ChoosePhotoToCreateMosiac", sender: self)})
+        }else{
+            dismiss(animated: true, completion: nil)
+        }
     }
-
+    
+    //Restarts the process of picking an image 
+    @IBAction func backToChoosePhoto(for segue: UIStoryboardSegue, sender: Any?) {
+        
+    }
 
 }
 
