@@ -27,7 +27,6 @@ class ViewController: UIViewController, UINavigationControllerDelegate, UIImageP
     }
     
     @IBOutlet var imageView: UIImageView!
-    @IBOutlet var chooseButton: UIButton!
     var imagePicker = UIImagePickerController()
     
     @IBAction func chooseImage() {

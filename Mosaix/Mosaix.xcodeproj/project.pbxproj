@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D888EDBA1E9D8D360046AF9F /* ImageSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D888EDB91E9D8D360046AF9F /* ImageSelection.swift */; };
+		D888EDBD1E9D91EF0046AF9F /* NaiveImageSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D888EDBC1E9D91EF0046AF9F /* NaiveImageSelection.swift */; };
+		D888EDBF1E9D93770046AF9F /* MetalImageSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D888EDBE1E9D93770046AF9F /* MetalImageSelection.swift */; };
+		D888EDC41EA1977F0046AF9F /* MosaicCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D888EDC31EA1977F0046AF9F /* MosaicCreator.swift */; };
 		D8BDDFC51E9D570200759851 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8BDDFC41E9D570200759851 /* AppDelegate.swift */; };
 		D8BDDFC71E9D570200759851 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8BDDFC61E9D570200759851 /* ViewController.swift */; };
 		D8BDDFCA1E9D570200759851 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = D8BDDFC81E9D570200759851 /* Main.storyboard */; };
@@ -36,6 +40,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D888EDB91E9D8D360046AF9F /* ImageSelection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImageSelection.swift; sourceTree = "<group>"; };
+		D888EDBC1E9D91EF0046AF9F /* NaiveImageSelection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NaiveImageSelection.swift; sourceTree = "<group>"; };
+		D888EDBE1E9D93770046AF9F /* MetalImageSelection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalImageSelection.swift; sourceTree = "<group>"; };
+		D888EDC31EA1977F0046AF9F /* MosaicCreator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MosaicCreator.swift; sourceTree = "<group>"; };
 		D8BDDFC11E9D570200759851 /* Mosaix.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mosaix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8BDDFC41E9D570200759851 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		D8BDDFC61E9D570200759851 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -78,6 +86,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D888EDBB1E9D91D30046AF9F /* ImageSelection */ = {
+			isa = PBXGroup;
+			children = (
+				D888EDB91E9D8D360046AF9F /* ImageSelection.swift */,
+				D888EDBC1E9D91EF0046AF9F /* NaiveImageSelection.swift */,
+				D888EDBE1E9D93770046AF9F /* MetalImageSelection.swift */,
+			);
+			name = ImageSelection;
+			sourceTree = "<group>";
+		};
+		D888EDC21EA197730046AF9F /* MosaicCreation */ = {
+			isa = PBXGroup;
+			children = (
+				D888EDC31EA1977F0046AF9F /* MosaicCreator.swift */,
+			);
+			name = MosaicCreation;
+			sourceTree = "<group>";
+		};
 		D8BDDFB81E9D570200759851 = {
 			isa = PBXGroup;
 			children = (
@@ -101,6 +127,8 @@
 		D8BDDFC31E9D570200759851 /* Mosaix */ = {
 			isa = PBXGroup;
 			children = (
+				D888EDC21EA197730046AF9F /* MosaicCreation */,
+				D888EDBB1E9D91D30046AF9F /* ImageSelection */,
 				D8BDDFC41E9D570200759851 /* AppDelegate.swift */,
 				D8BDDFC61E9D570200759851 /* ViewController.swift */,
 				D8BDDFC81E9D570200759851 /* Main.storyboard */,
@@ -269,8 +297,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				D8BDDFC71E9D570200759851 /* ViewController.swift in Sources */,
+				D888EDBF1E9D93770046AF9F /* MetalImageSelection.swift in Sources */,
+				D888EDC41EA1977F0046AF9F /* MosaicCreator.swift in Sources */,
 				D8BDDFF61E9D6D4500759851 /* OptionsViewController.swift in Sources */,
 				D8BDDFC51E9D570200759851 /* AppDelegate.swift in Sources */,
+				D888EDBA1E9D8D360046AF9F /* ImageSelection.swift in Sources */,
+				D888EDBD1E9D91EF0046AF9F /* NaiveImageSelection.swift in Sources */,
 				D8BDDFCD1E9D570200759851 /* Mosaix.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -526,6 +558,7 @@
 				D8BDDFEE1E9D570200759851 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		D8BDDFEF1E9D570200759851 /* Build configuration list for PBXNativeTarget "MosaixTests" */ = {
 			isa = XCConfigurationList;
@@ -534,6 +567,7 @@
 				D8BDDFF11E9D570200759851 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		D8BDDFF21E9D570200759851 /* Build configuration list for PBXNativeTarget "MosaixUITests" */ = {
 			isa = XCConfigurationList;
@@ -542,6 +576,7 @@
 				D8BDDFF41E9D570200759851 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 

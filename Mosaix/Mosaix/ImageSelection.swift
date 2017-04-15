@@ -7,3 +7,22 @@
 //
 
 import Foundation
+import UIKit
+
+struct ImageChoice {
+    var position    : (row: Int, col: Int)
+    var image       : UIImage
+    var topLeft     : (x: Int, y: Int)
+    var bottomRight : (x: Int, y: Int)
+}
+
+enum ImageSelectionError: Error {
+    case PreprocessingIncomplete
+    case LibraryAccessDenied
+    case LibraryAccessNotDetermined
+}
+
+protocol ImageSelection {
+    init(refImage : UIImage)
+    func select(gridSizePoints : Int, onSelect : @escaping (ImageChoice) -> Void) throws -> Void
+}
