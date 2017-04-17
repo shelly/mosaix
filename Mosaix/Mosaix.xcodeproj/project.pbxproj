@@ -21,7 +21,7 @@
 		D8BDDFE81E9D570200759851 /* MosaixUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8BDDFE71E9D570200759851 /* MosaixUITests.swift */; };
 		D8BDDFF61E9D6D4500759851 /* OptionsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8BDDFF51E9D6D4500759851 /* OptionsViewController.swift */; };
 		E756AFC91E9D958A005E2950 /* CompositePhotoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E756AFC81E9D958A005E2950 /* CompositePhotoViewController.swift */; };
-		E756AFCB1E9D95C8005E2950 /* CreateMosiacViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E756AFCA1E9D95C8005E2950 /* CreateMosiacViewController.swift */; };
+		E756AFCB1E9D95C8005E2950 /* CreateMosaicViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E756AFCA1E9D95C8005E2950 /* CreateMosaicViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -62,7 +62,7 @@
 		D8BDDFE91E9D570200759851 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D8BDDFF51E9D6D4500759851 /* OptionsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OptionsViewController.swift; sourceTree = "<group>"; };
 		E756AFC81E9D958A005E2950 /* CompositePhotoViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CompositePhotoViewController.swift; sourceTree = "<group>"; };
-		E756AFCA1E9D95C8005E2950 /* CreateMosiacViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CreateMosiacViewController.swift; sourceTree = "<group>"; };
+		E756AFCA1E9D95C8005E2950 /* CreateMosaicViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CreateMosaicViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -131,9 +131,9 @@
 		D8BDDFC31E9D570200759851 /* Mosaix */ = {
 			isa = PBXGroup;
 			children = (
+				D8BDDFC41E9D570200759851 /* AppDelegate.swift */,
 				D888EDC21EA197730046AF9F /* MosaicCreation */,
 				D888EDBB1E9D91D30046AF9F /* ImageSelection */,
-				D8BDDFC41E9D570200759851 /* AppDelegate.swift */,
 				E756AFC71E9D939C005E2950 /* View Controllers */,
 				D8BDDFC81E9D570200759851 /* Main.storyboard */,
 				D8BDDFCE1E9D570200759851 /* Assets.xcassets */,
@@ -166,7 +166,7 @@
 			isa = PBXGroup;
 			children = (
 				D8BDDFC61E9D570200759851 /* ChoosePhotoViewController.swift */,
-				E756AFCA1E9D95C8005E2950 /* CreateMosiacViewController.swift */,
+				E756AFCA1E9D95C8005E2950 /* CreateMosaicViewController.swift */,
 				D8BDDFF51E9D6D4500759851 /* OptionsViewController.swift */,
 				E756AFC81E9D958A005E2950 /* CompositePhotoViewController.swift */,
 			);
@@ -318,7 +318,7 @@
 				D8BDDFF61E9D6D4500759851 /* OptionsViewController.swift in Sources */,
 				D8BDDFC51E9D570200759851 /* AppDelegate.swift in Sources */,
 				E756AFC91E9D958A005E2950 /* CompositePhotoViewController.swift in Sources */,
-				E756AFCB1E9D95C8005E2950 /* CreateMosiacViewController.swift in Sources */,
+				E756AFCB1E9D95C8005E2950 /* CreateMosaicViewController.swift in Sources */,
 				D8BDDFCD1E9D570200759851 /* Mosaix.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

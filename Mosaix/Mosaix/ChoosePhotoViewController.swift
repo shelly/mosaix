@@ -13,6 +13,7 @@ class ChoosePhotoViewController: UIViewController, UINavigationControllerDelegat
     
     // The Metal device we use to perform Metal operations
     var device: MTLDevice!
+    var pickedImage: UIImage!
     var imagePicker = UIImagePickerController()
     
     
@@ -52,8 +53,9 @@ class ChoosePhotoViewController: UIViewController, UINavigationControllerDelegat
     }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        if let pickedImage = info[UIImagePickerControllerOriginalImage] as? UIImage{
-            dismiss(animated: true, completion: { self.performSegue(withIdentifier: "ChoosePhotoToCreateMosiac", sender: self)})
+        if (info[UIImagePickerControllerOriginalImage]) != nil{
+            pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
+            dismiss(animated: true, completion: { self.performSegue(withIdentifier: "ChoosePhotoToCreateMosaic", sender: self)})
         }else{
             dismiss(animated: true, completion: nil)
         }
@@ -62,6 +64,14 @@ class ChoosePhotoViewController: UIViewController, UINavigationControllerDelegat
     //Restarts the process of picking an image 
     @IBAction func backToChoosePhoto(for segue: UIStoryboardSegue, sender: Any?) {
         
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "ChoosePhotoToCreateMosaic" {
+            if let CreateMosaicViewController = segue.destination as? CreateMosaicViewController {
+                CreateMosaicViewController.image = pickedImage
+            }
+        }
     }
 
 }
