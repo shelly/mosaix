@@ -64,7 +64,7 @@
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </view>
                     <connections>
-                        <segue destination="ipi-PF-cmT" kind="presentation" identifier="ChoosePhotoToCreateMosiac" id="nKz-AF-1aR"/>
+                        <segue destination="ipi-PF-cmT" kind="presentation" identifier="ChoosePhotoToCreateMosaic" id="nKz-AF-1aR"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
@@ -108,7 +108,7 @@
         <!--Create Mosiac-->
         <scene sceneID="vft-mA-5py">
             <objects>
-                <viewController id="ipi-PF-cmT" userLabel="Create Mosiac" customClass="CreateMosiacViewController" customModule="Mosaix" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController id="ipi-PF-cmT" userLabel="Create Mosiac" customClass="CreateMosaicViewController" customModule="Mosaix" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="6yq-iH-G3P"/>
                         <viewControllerLayoutGuide type="bottom" id="fGy-G7-Bw5"/>
@@ -155,6 +155,7 @@
                                     <color key="titleColor" cocoaTouchSystemColor="darkTextColor"/>
                                 </state>
                                 <connections>
+                                    <action selector="createCompositePhoto" destination="ipi-PF-cmT" eventType="touchUpInside" id="L9E-ia-hoi"/>
                                     <segue destination="XUT-M6-D6C" kind="presentation" id="nF7-oO-tXN"/>
                                 </connections>
                             </button>
@@ -175,6 +176,9 @@
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
+                    <connections>
+                        <outlet property="imageView" destination="K6n-57-6iv" id="nYz-lz-iA4"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="AnY-Z8-Vdx" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <exit id="tYw-zb-P2g" userLabel="Exit" sceneMemberID="exit"/>

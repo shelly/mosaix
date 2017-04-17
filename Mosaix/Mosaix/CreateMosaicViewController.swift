@@ -6,12 +6,18 @@
 
 import UIKit
 
-class CreateMosiacViewController: UIViewController {
+
+class CreateMosaicViewController: UIViewController {
+    
+    @IBOutlet weak var imageView: UIImageView!
+    var image: UIImage!
+    var mosaicCreator: MosaicCreator!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        imageView.image = image
         // Do any additional setup after loading the view.
+        mosaicCreator = MosaicCreator(reference: image)
     }
     
     override func didReceiveMemoryWarning() {
@@ -22,7 +28,7 @@ class CreateMosiacViewController: UIViewController {
     //Transitions to other screens
     
     //Forget/save any settings
-    @IBAction func cancelCreateMosiacView() {
+    @IBAction func cancelCreateMosaicView() {
         
     }
     
@@ -33,7 +39,13 @@ class CreateMosiacViewController: UIViewController {
     
     //Launch composite photo creation
     @IBAction func createCompositePhoto() {
-        
+        print("Creating composite photo!!")
+        do {
+            try mosaicCreator.begin()
+        }
+        catch {
+            print("We broke it!!")
+        }
     }
 
     //Restarting createMosaic screen 
