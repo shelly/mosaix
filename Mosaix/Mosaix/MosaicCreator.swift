@@ -28,8 +28,8 @@ class MosaicCreator {
     private var imageSelector : ImageSelection
     private var reference : UIImage
     private var inProgress : Bool
-    private var gridSizePoints : Int = (MosaicCreationConstants.gridSizeMax + MosaicCreationConstants.gridSizeMin)/2
-    private var quality : Int = (MosaicCreationConstants.qualityMax + MosaicCreationConstants.qualityMin)/2
+    private var _gridSizePoints : Int = (MosaicCreationConstants.gridSizeMax + MosaicCreationConstants.gridSizeMin)/2
+    private var _quality : Int = (MosaicCreationConstants.qualityMax + MosaicCreationConstants.qualityMin)/2
     
     init(reference: UIImage) {
         self.inProgress = false
@@ -37,20 +37,26 @@ class MosaicCreator {
         self.imageSelector = NaiveImageSelection(refImage: reference)
     }
     
-    func setGridSize(gridSizePoints: Int) throws {
+    func getGridSizePoints() -> Int {
+        return self._gridSizePoints
+    }
+    func setGridSizePoints(gridSizePoints : Int) throws {
         guard (gridSizePoints >= MosaicCreationConstants.gridSizeMin &&
-               gridSizePoints <= MosaicCreationConstants.gridSizeMax) else {
-            throw MosaicCreationError.GridSizeOutOfBounds
-        }
-        self.gridSizePoints = gridSizePoints
+                gridSizePoints <= MosaicCreationConstants.gridSizeMax) else {
+                    throw MosaicCreationError.GridSizeOutOfBounds
+            }
+            self._gridSizePoints = gridSizePoints
     }
     
+    func getQuality() -> Int {
+        return self._quality
+    }
     func setQuality(quality: Int) throws {
         guard (quality >= MosaicCreationConstants.qualityMin &&
                quality <= MosaicCreationConstants.qualityMax) else {
             throw MosaicCreationError.QualityOutOfBounds
         }
-        self.quality = quality
+        self._quality = quality
     }
     
     func begin() throws -> Void {
@@ -58,7 +64,7 @@ class MosaicCreator {
             throw MosaicCreationError.MosaicCreationInProgress
         } else {
             self.inProgress = true
-            try self.imageSelector.select(gridSizePoints: gridSizePoints, onSelect: {(choice: ImageChoice) in
+            try self.imageSelector.select(gridSizePoints: self._gridSizePoints, onSelect: {(choice: ImageChoice) in
                 return
             })
         }
