@@ -11,7 +11,7 @@ import UIKit
 import Photos
 
 struct NaiveSelectionConstants {
-    static let skipSize = 5 //Number of pixels to skip over when checking
+//    static let skipSize = 5 //Number of pixels to skip over when checking
 }
 
 enum NaiveSelectionError: Error {
@@ -24,12 +24,14 @@ class NaiveImageSelection: ImageSelection {
     private var referencePixelData : CFData
     private var allPhotos : PHFetchResult<PHAsset>?
     private var imageManager : PHImageManager
+    private var skipSize : Int
     
     required init(refImage: UIImage) {
         self.referenceImage = refImage
         self.referencePixelData = self.referenceImage.cgImage!.dataProvider!.data!
         self.imageManager = PHImageManager()
         self.allPhotos = nil
+        self.skipSize = 0
         PHPhotoLibrary.requestAuthorization { (status) in
             switch status {
                 case .authorized:
@@ -64,12 +66,12 @@ class NaiveImageSelection: ImageSelection {
         guard (refRegion.width == otherRegion.width && refRegion.height == otherRegion.height) else {
             throw NaiveSelectionError.RegionMismatch
         }
-        guard (NaiveSelectionConstants.skipSize >= 0) else {
+        guard (self.skipSize >= 0) else {
             throw NaiveSelectionError.InvalidSkipSize
         }
         var fit : CGFloat = 0.0
-        for deltaY in stride(from: 0, to: refRegion.height - 1, by: 1 + NaiveSelectionConstants.skipSize) {
-            for deltaX in stride(from: 0, to: refRegion.width - 1, by: 1 + NaiveSelectionConstants.skipSize) {
+        for deltaY in stride(from: 0, to: refRegion.height - 1, by: 1 + self.skipSize) {
+            for deltaX in stride(from: 0, to: refRegion.width - 1, by: 1 + self.skipSize) {
                 let refPoint = CGPoint(x:Int(refRegion.topLeft.x) + deltaX,y:Int(refRegion.topLeft.y) + deltaY)
                 let otherPoint = CGPoint(x:Int(otherRegion.topLeft.x) + deltaX, y: Int(otherRegion.topLeft.y) + deltaY)
                 fit += self.comparePoints(refPoint: refPoint, otherImage: otherImage, otherPoint: otherPoint)
@@ -105,10 +107,11 @@ class NaiveImageSelection: ImageSelection {
         onSelect(bestMatch!)
     }
     
-    func select(gridSizePoints: Int, onSelect: @escaping (ImageChoice) -> Void) throws -> Void {
+    func select(gridSizePoints: Int, quality: Int, onSelect: @escaping (ImageChoice) -> Void) throws -> Void {
         if (allPhotos == nil) {
             throw ImageSelectionError.PreprocessingIncomplete
         }
+        self.skipSize = MosaicCreationConstants.qualityMax - quality - MosaicCreationConstants.qualityMin
         let numRows : Int = Int(self.referenceImage.size.height) / gridSizePoints
         let numCols : Int = Int(self.referenceImage.size.width) / gridSizePoints
 //        print("selecting with grid size \(gridSizePoints), \(numRows) rows, and \(numCols) columns.")

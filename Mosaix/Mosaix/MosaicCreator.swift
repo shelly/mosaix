@@ -106,7 +106,7 @@ class MosaicCreator {
             throw MosaicCreationError.MosaicCreationInProgress
         } else {
             self.inProgress = true
-            try self.imageSelector.select(gridSizePoints: self._gridSizePoints, onSelect: {(choice: ImageChoice) in
+            try self.imageSelector.select(gridSizePoints: self._gridSizePoints, quality: self._quality, onSelect: {(choice: ImageChoice) in
                 UIGraphicsPushContext(self.compositeContext)
                 let drawRect = CGRect(x: Int(choice.region.topLeft.x), y: Int(choice.region.topLeft.y), width: choice.region.width, height: choice.region.height)
                 self.compositeContext.draw(choice.image.cgImage!, in:drawRect)

@@ -16,7 +16,7 @@ class MetalImageSelection: ImageSelection {
         self.referenceImage = refImage
     }
     
-    func select(gridSizePoints : Int, onSelect : @escaping (ImageChoice) -> Void) throws -> Void {
+    func select(gridSizePoints : Int, quality: Int, onSelect : @escaping (ImageChoice) -> Void) throws -> Void {
         return
     }
 }
