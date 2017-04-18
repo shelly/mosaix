@@ -12,8 +12,8 @@ import UIKit
 struct ImageChoice {
     var position    : (row: Int, col: Int)
     var image       : UIImage
-    var topLeft     : (x: Int, y: Int)
-    var bottomRight : (x: Int, y: Int)
+    var region      : Region
+    var fit         : CGFloat // Represents how good the fit is. Zero is best.
 }
 
 enum ImageSelectionError: Error {

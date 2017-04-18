@@ -9,6 +9,32 @@
 import Foundation
 import UIKit
 
+
+// Represents a region of a UIImage
+class Region {
+    var topLeft : CGPoint
+    var bottomRight : CGPoint
+    
+    init(topLeft : CGPoint, bottomRight : CGPoint) {
+        self.topLeft = topLeft
+        self.bottomRight = bottomRight
+    }
+    
+    var height : Int {
+        get {
+            return Int(self.bottomRight.y - self.topLeft.y)
+        }
+    }
+    
+    var width : Int {
+        get {
+            return Int(self.bottomRight.x - self.topLeft.x)
+        }
+    }
+}
+
+typealias region = (topLeft: CGPoint, bottomRight: CGPoint)
+
 enum MosaicCreationError: Error {
     case MosaicCreationInProgress
     case QualityOutOfBounds
@@ -17,7 +43,7 @@ enum MosaicCreationError: Error {
 
 struct MosaicCreationConstants {
     static let gridSizeMin = 10
-    static let gridSizeMax = 100
+    static let gridSizeMax = 500
     
     static let qualityMin = 0
     static let qualityMax = 100
