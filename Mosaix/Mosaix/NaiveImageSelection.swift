@@ -11,7 +11,7 @@ import UIKit
 import Photos
 
 struct NaiveSelectionConstants {
-    static let skipSize = 26 //Number of pixels to skip over when checking
+    static let skipSize = 5 //Number of pixels to skip over when checking
 }
 
 enum NaiveSelectionError: Error {
@@ -19,30 +19,15 @@ enum NaiveSelectionError: Error {
     case RegionMismatch
 }
 
-extension UIImage {
-    func getPixelColor(pos: CGPoint) -> UIColor {
-        
-        let pixelData = self.cgImage!.dataProvider!.data
-        let data: UnsafePointer<UInt8> = CFDataGetBytePtr(pixelData)
-        
-        let pixelInfo: Int = ((Int(self.size.width) * Int(pos.y)) + Int(pos.x)) * 4
-        
-        let r = CGFloat(data[pixelInfo]) / CGFloat(255.0)
-        let g = CGFloat(data[pixelInfo+1]) / CGFloat(255.0)
-        let b = CGFloat(data[pixelInfo+2]) / CGFloat(255.0)
-        let a = CGFloat(data[pixelInfo+3]) / CGFloat(255.0)
-        
-        return UIColor(red: r, green: g, blue: b, alpha: a)
-    }
-}
-
 class NaiveImageSelection: ImageSelection {
     private var referenceImage : UIImage
+    private var referencePixelData : CFData
     private var allPhotos : PHFetchResult<PHAsset>?
     private var imageManager : PHImageManager
     
     required init(refImage: UIImage) {
         self.referenceImage = refImage
+        self.referencePixelData = self.referenceImage.cgImage!.dataProvider!.data!
         self.imageManager = PHImageManager()
         self.allPhotos = nil
         PHPhotoLibrary.requestAuthorization { (status) in
@@ -58,6 +43,23 @@ class NaiveImageSelection: ImageSelection {
         }
     }
     
+    private func comparePoints(refPoint: CGPoint, otherImage: UIImage, otherPoint: CGPoint) -> CGFloat {
+        
+        
+        let otherPixelData = otherImage.cgImage!.dataProvider!.data
+        
+        let refData: UnsafePointer<UInt8> = CFDataGetBytePtr(self.referencePixelData)
+        let othData: UnsafePointer<UInt8> = CFDataGetBytePtr(otherPixelData)
+        
+        let refPixelIndex : Int = ((Int(referenceImage.size.width) * Int(refPoint.y)) + Int(refPoint.x)) * 4
+        let othPixelIndex : Int = ((Int(otherImage.size.width) * Int(otherPoint.y)) + Int(otherPoint.x)) * 4
+        
+        let redDiff = Int(refData[refPixelIndex]) - Int(othData[othPixelIndex])
+        let greenDiff = Int(refData[refPixelIndex+1]) - Int(othData[othPixelIndex+1])
+        let blueDiff = Int(refData[refPixelIndex+2]) - Int(othData[othPixelIndex+2])
+        return CGFloat(abs(redDiff) + abs(greenDiff) + abs(blueDiff)) / CGFloat(255.0)
+    }
+    
     private func compareRegions(refRegion: Region, otherImage: UIImage, otherRegion: Region) throws -> CGFloat {
         guard (refRegion.width == otherRegion.width && refRegion.height == otherRegion.height) else {
             throw NaiveSelectionError.RegionMismatch
@@ -66,22 +68,11 @@ class NaiveImageSelection: ImageSelection {
             throw NaiveSelectionError.InvalidSkipSize
         }
         var fit : CGFloat = 0.0
-        
-        var refRGB : (red: CGFloat, blue: CGFloat, green: CGFloat) = (0,0,0)
-        var othRGB : (red: CGFloat, blue: CGFloat, green: CGFloat) = (0,0,0)
-        
         for deltaY in stride(from: 0, to: refRegion.height - 1, by: 1 + NaiveSelectionConstants.skipSize) {
-//            print("row \(deltaY+1)/\(refRegion.height) (current fit: \(fit))")
             for deltaX in stride(from: 0, to: refRegion.width - 1, by: 1 + NaiveSelectionConstants.skipSize) {
                 let refPoint = CGPoint(x:Int(refRegion.topLeft.x) + deltaX,y:Int(refRegion.topLeft.y) + deltaY)
-                let refColor = self.referenceImage.getPixelColor(pos: refPoint)
-                
                 let otherPoint = CGPoint(x:Int(otherRegion.topLeft.x) + deltaX, y: Int(otherRegion.topLeft.y) + deltaY)
-                let otherColor = otherImage.getPixelColor(pos: otherPoint)
-                
-                refColor.getRed(&refRGB.red, green: &refRGB.green, blue: &refRGB.blue, alpha: nil)
-                otherColor.getRed(&othRGB.red, green: &othRGB.green, blue: &othRGB.blue, alpha: nil)
-                fit += abs(refRGB.red - othRGB.red) + abs(refRGB.blue - othRGB.blue) + abs(refRGB.green - othRGB.green)
+                fit += self.comparePoints(refPoint: refPoint, otherImage: otherImage, otherPoint: otherPoint)
             }
         }
         return fit
@@ -98,7 +89,6 @@ class NaiveImageSelection: ImageSelection {
                 self.imageManager.requestImage(for: asset, targetSize: targetSize, contentMode: PHImageContentMode.default, options: options,
                                                resultHandler: {(result, info) -> Void in
                                                 if (result != nil) {
-//                                                    print("  has image")
                                                     do {
                                                         let choiceRegion = Region(topLeft: CGPoint.zero, bottomRight: CGPoint(x: refRegion.width, y: refRegion.height))
                                                         let fit : CGFloat = try self.compareRegions(refRegion: refRegion, otherImage: result!, otherRegion: choiceRegion)
