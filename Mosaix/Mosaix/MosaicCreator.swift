@@ -51,16 +51,32 @@ struct MosaicCreationConstants {
 
 class MosaicCreator {
     
-    private var imageSelector : ImageSelection
-    private var reference : UIImage
+    private let imageSelector : ImageSelection
+    private let reference : UIImage
     private var inProgress : Bool
     private var _gridSizePoints : Int = (MosaicCreationConstants.gridSizeMax + MosaicCreationConstants.gridSizeMin)/2
     private var _quality : Int = (MosaicCreationConstants.qualityMax + MosaicCreationConstants.qualityMin)/2
+    private let compositeContext: CGContext
+    
+    var compositeImage : UIImage {
+        get {
+            UIGraphicsPushContext(self.compositeContext)
+            let image : UIImage = UIGraphicsGetImageFromCurrentImageContext()!
+            UIGraphicsPopContext()
+            return image
+        }
+    }
     
     init(reference: UIImage) {
         self.inProgress = false
         self.reference = reference
         self.imageSelector = NaiveImageSelection(refImage: reference)
+        
+        UIGraphicsBeginImageContextWithOptions(self.reference.size, true, 0.0)
+        self.compositeContext = UIGraphicsGetCurrentContext()!
+        UIGraphicsEndImageContext()
+        
+        
     }
     
     func getGridSizePoints() -> Int {
@@ -91,6 +107,10 @@ class MosaicCreator {
         } else {
             self.inProgress = true
             try self.imageSelector.select(gridSizePoints: self._gridSizePoints, onSelect: {(choice: ImageChoice) in
+                UIGraphicsPushContext(self.compositeContext)
+                let drawRect = CGRect(x: Int(choice.region.topLeft.x), y: Int(choice.region.topLeft.y), width: choice.region.width, height: choice.region.height)
+                self.compositeContext.draw(choice.image.cgImage!, in:drawRect)
+                UIGraphicsPopContext()
                 return
             })
         }
