@@ -83,6 +83,11 @@ class TenPointAveraging: LibraryPreprocessing {
         }
     }
     
+    private func loadFromFile() {
+//        let manager = NSFileManager.defaultManager()
+//        let dirURL = manager.URLForDirectory(.DocumentDirectory, inDomain: .UserDomainmask, appropriateForURL: nil, create: false, error: nil))
+    }
+    
  
     private func processAllPhotos(fetchResult: PHFetchResult<PHAsset>, complete: @escaping () -> Void) {
         self.totalPhotos = fetchResult.count
@@ -98,6 +103,7 @@ class TenPointAveraging: LibraryPreprocessing {
                                                         self.averages[asset] = tpa
                                                         self.photosComplete += 1
                                                         if (self.photosComplete == self.totalPhotos) {
+                                                            self.inProgress = false
                                                             complete()
                                                         }
                                                     })
