@@ -8,10 +8,21 @@ import UIKit
 
 class CompositePhotoViewController: UIViewController {
     
+    var mosaicCreator: MosaicCreator!
+    @IBOutlet weak var compositePhoto: UIImageView! = UIImageView()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Do any additional setup after loading the view.
+        DispatchQueue.global().async{
+            do {
+                try self.mosaicCreator.begin()
+                self.compositePhoto.image = self.mosaicCreator.compositeImage
+            }
+            catch {
+                print("Error with dispatching mosaicCreator.begin.")
+            }
+        }
     }
     
     override func didReceiveMemoryWarning() {
