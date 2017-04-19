@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D86AD3701EA6BF5100E374BD /* TenPointAveraging.swift in Sources */ = {isa = PBXBuildFile; fileRef = D86AD36F1EA6BF5100E374BD /* TenPointAveraging.swift */; };
+		D86AD3721EA6BF5B00E374BD /* Preprocessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D86AD3711EA6BF5B00E374BD /* Preprocessing.swift */; };
 		D888EDBA1E9D8D360046AF9F /* ImageSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D888EDB91E9D8D360046AF9F /* ImageSelection.swift */; };
 		D888EDBD1E9D91EF0046AF9F /* NaiveImageSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D888EDBC1E9D91EF0046AF9F /* NaiveImageSelection.swift */; };
 		D888EDBF1E9D93770046AF9F /* MetalImageSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D888EDBE1E9D93770046AF9F /* MetalImageSelection.swift */; };
@@ -42,6 +44,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D86AD36F1EA6BF5100E374BD /* TenPointAveraging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TenPointAveraging.swift; sourceTree = "<group>"; };
+		D86AD3711EA6BF5B00E374BD /* Preprocessing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Preprocessing.swift; sourceTree = "<group>"; };
 		D888EDB91E9D8D360046AF9F /* ImageSelection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImageSelection.swift; sourceTree = "<group>"; };
 		D888EDBC1E9D91EF0046AF9F /* NaiveImageSelection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NaiveImageSelection.swift; sourceTree = "<group>"; };
 		D888EDBE1E9D93770046AF9F /* MetalImageSelection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalImageSelection.swift; sourceTree = "<group>"; };
@@ -90,6 +94,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D86AD36E1EA6B9D800E374BD /* Preprocessing */ = {
+			isa = PBXGroup;
+			children = (
+				D86AD36F1EA6BF5100E374BD /* TenPointAveraging.swift */,
+				D86AD3711EA6BF5B00E374BD /* Preprocessing.swift */,
+			);
+			name = Preprocessing;
+			sourceTree = "<group>";
+		};
 		D888EDBB1E9D91D30046AF9F /* ImageSelection */ = {
 			isa = PBXGroup;
 			children = (
@@ -131,6 +144,7 @@
 		D8BDDFC31E9D570200759851 /* Mosaix */ = {
 			isa = PBXGroup;
 			children = (
+				D86AD36E1EA6B9D800E374BD /* Preprocessing */,
 				D8BDDFC41E9D570200759851 /* AppDelegate.swift */,
 				D888EDC21EA197730046AF9F /* MosaicCreation */,
 				D888EDBB1E9D91D30046AF9F /* ImageSelection */,
@@ -310,6 +324,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D86AD3701EA6BF5100E374BD /* TenPointAveraging.swift in Sources */,
 				D888EDBF1E9D93770046AF9F /* MetalImageSelection.swift in Sources */,
 				D888EDC41EA1977F0046AF9F /* MosaicCreator.swift in Sources */,
 				D888EDBA1E9D8D360046AF9F /* ImageSelection.swift in Sources */,
@@ -319,6 +334,7 @@
 				D8BDDFC51E9D570200759851 /* AppDelegate.swift in Sources */,
 				E756AFC91E9D958A005E2950 /* CompositePhotoViewController.swift in Sources */,
 				E756AFCB1E9D95C8005E2950 /* CreateMosaicViewController.swift in Sources */,
+				D86AD3721EA6BF5B00E374BD /* Preprocessing.swift in Sources */,
 				D8BDDFCD1E9D570200759851 /* Mosaix.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
