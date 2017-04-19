@@ -53,13 +53,13 @@ class MetalImageSelection: ImageSelection {
             throw NaiveSelectionError.InvalidSkipSize
         }
         var fit : CGFloat = 0.0
-        for deltaY in stride(from: 0, to: refRegion.height - 1, by: 1 + self.skipSize) {
-            for deltaX in stride(from: 0, to: refRegion.width - 1, by: 1 + self.skipSize) {
-                let refPoint = CGPoint(x:Int(refRegion.topLeft.x) + deltaX,y:Int(refRegion.topLeft.y) + deltaY)
-                let otherPoint = CGPoint(x:Int(otherRegion.topLeft.x) + deltaX, y: Int(otherRegion.topLeft.y) + deltaY)
-                fit += self.comparePoints(refPoint: refPoint, otherImage: otherImage, otherPoint: otherPoint)
-            }
-        }
+//        for deltaY in stride(from: 0, to: refRegion.height - 1, by: 1 + self.skipSize) {
+//            for deltaX in stride(from: 0, to: refRegion.width - 1, by: 1 + self.skipSize) {
+//                let refPoint = CGPoint(x:Int(refRegion.topLeft.x) + deltaX,y:Int(refRegion.topLeft.y) + deltaY)
+//                let otherPoint = CGPoint(x:Int(otherRegion.topLeft.x) + deltaX, y: Int(otherRegion.topLeft.y) + deltaY)
+//                fit += self.comparePoints(refPoint: refPoint, otherImage: otherImage, otherPoint: otherPoint)
+//            }
+//        }
         return fit
     }
     
