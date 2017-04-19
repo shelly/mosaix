@@ -97,6 +97,9 @@ class TenPointAveraging: LibraryPreprocessing {
                                                     self.processPhoto(image: image.cgImage!, width: Int(image.size.width), height: Int(image.size.height), complete: {(tpa) -> Void in
                                                         self.averages[asset] = tpa
                                                         self.photosComplete += 1
+                                                        if (self.photosComplete == self.totalPhotos) {
+                                                            complete()
+                                                        }
                                                     })
                                                 }
                 })
@@ -119,6 +122,7 @@ class TenPointAveraging: LibraryPreprocessing {
     
     func processPhoto(image: CGImage, width: Int, height: Int, complete: (TenPointAverage) -> Void) {
         //Computes the average
+        print("processing photo.")
         let ciImage = CIImage(cgImage: image)
         let tpa = TenPointAverage()
         let colWidth = width / TenPointAverageConstants.cols
