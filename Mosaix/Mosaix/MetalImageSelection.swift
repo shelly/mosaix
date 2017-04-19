@@ -21,6 +21,7 @@ enum MetalSelectionError: Error {
 
 class MetalImageSelection: ImageSelection {
     private var referenceImage : UIImage
+    private var refCGImage : CGImage
     private var allPhotos : PHFetchResult<PHAsset>?
     private var imageManager : PHImageManager
     private var skipSize : Int
@@ -28,60 +29,35 @@ class MetalImageSelection: ImageSelection {
     
     required init(refImage: UIImage) {
         self.referenceImage = refImage
+        self.refCGImage = refImage.cgImage!
         self.imageManager = PHImageManager()
         self.allPhotos = nil
         self.skipSize = 0
         self.tpa = TenPointAveraging()
     }
     
-
-    
-    private func compareRegions(refRegion: CGRect, otherImage: UIImage, otherRegion: CGRect) throws -> CGFloat {
-        guard (refRegion.width == otherRegion.width && refRegion.height == otherRegion.height) else {
-            throw NaiveSelectionError.RegionMismatch
-        }
-        guard (self.skipSize >= 0) else {
-            throw NaiveSelectionError.InvalidSkipSize
-        }
-        var fit : CGFloat = 0.0
-//        for deltaY in stride(from: 0, to: refRegion.height - 1, by: 1 + self.skipSize) {
-//            for deltaX in stride(from: 0, to: refRegion.width - 1, by: 1 + self.skipSize) {
-//                let refPoint = CGPoint(x:Int(refRegion.topLeft.x) + deltaX,y:Int(refRegion.topLeft.y) + deltaY)
-//                let otherPoint = CGPoint(x:Int(otherRegion.topLeft.x) + deltaX, y: Int(otherRegion.topLeft.y) + deltaY)
-//                fit += self.comparePoints(refPoint: refPoint, otherImage: otherImage, otherPoint: otherPoint)
-//            }
-//        }
-        return fit
-    }
-    
     private func findBestMatch(row: Int, col: Int, refRegion: CGRect, onSelect : @escaping (ImageChoice) -> Void) {
         print("(\(row), \(col)) finding best match.")
-        
-        
-        
-        var bestMatch : ImageChoice? = nil
-        allPhotos?.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
-            if (asset.mediaType == .image) {
-                let targetSize = CGSize(width: refRegion.width, height: refRegion.height)
-                let options = PHImageRequestOptions()
-                options.isSynchronous = true
-                self.imageManager.requestImage(for: asset, targetSize: targetSize, contentMode: PHImageContentMode.default, options: options,
-                                               resultHandler: {(result, info) -> Void in
-                                                if (result != nil) {
-                                                    do {
-                                                        let choiceRegion = CGRect(x: 0, y: 0, width: Int(refRegion.width), height: Int(refRegion.height))
-                                                        let fit : CGFloat = try self.compareRegions(refRegion: refRegion, otherImage: result!, otherRegion: choiceRegion)
-                                                        if (bestMatch == nil || fit < bestMatch!.fit) {
-                                                            bestMatch = ImageChoice(position: (row, col), image: result!, region: choiceRegion, fit: fit)
-                                                        }
-                                                    } catch {
-                                                        print("Region mismatch!!!")
-                                                    }
-                                                }
-                })
+        let croppedImage : CGImage = self.refCGImage.cropping(to: refRegion)!
+        self.tpa.processPhoto(image: croppedImage, width: Int(refRegion.width), height: Int(refRegion.height), complete: {(refTPA) -> Void in
+            var bestFit : PHAsset? = nil
+            var bestDiff : CGFloat = 0.0
+            for (asset, assetTPA) in self.tpa.averages {
+                let diff = assetTPA - refTPA
+                if (bestFit == nil || diff < bestDiff) {
+                    bestFit = asset
+                    bestDiff = diff
+                }
             }
+            let targetSize = CGSize(width: refRegion.width, height: refRegion.height)
+            let options = PHImageRequestOptions()
+            self.imageManager.requestImage(for: bestFit!, targetSize: targetSize, contentMode: PHImageContentMode.default, options: options,
+                                           resultHandler: {(result, info) -> Void in
+                                            let choiceRegion = CGRect(x: 0, y: 0, width: Int(refRegion.width), height: Int(refRegion.height))
+                                            let choice = ImageChoice(position: (row:row,col:col), image: result!, region: choiceRegion, fit: bestDiff)
+                                            onSelect(choice)
+            })
         })
-        onSelect(bestMatch!)
     }
     
     func select(gridSizePoints: Int, quality: Int, onSelect: @escaping (ImageChoice) -> Void) throws -> Void {

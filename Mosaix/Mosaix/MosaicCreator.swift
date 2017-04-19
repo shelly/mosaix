@@ -45,7 +45,8 @@ class MosaicCreator {
     init(reference: UIImage) {
         self.inProgress = false
         self.reference = reference
-        self.imageSelector = NaiveImageSelection(refImage: reference)
+        self.imageSelector = MetalImageSelection(refImage: reference)
+            //NaiveImageSelection(refImage: reference)
         
         self.totalGridSpaces = 0
         self.gridSpacesFilled = 0

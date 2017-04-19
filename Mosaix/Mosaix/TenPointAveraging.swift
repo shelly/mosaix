@@ -10,22 +10,49 @@ import Foundation
 import Photos
 
 
-typealias RGBFloat = (r : CGFloat, g: CGFloat, b: CGFloat)
-struct TenPointAverage {
-    var totalAvg : RGBFloat = (0,0,0)
-    var gridAvg : [[RGBFloat]] = Array(repeating: Array(repeating: RGBFloat(0,0,0), count: 3), count: 3)
+class RGBFloat {
+    var r : CGFloat
+    var g: CGFloat
+    var b: CGFloat
+    
+    init(_ red : CGFloat, _ green : CGFloat, _ blue : CGFloat) {
+        self.r = red
+        self.g = green
+        self.b = blue
+    }
+    
+    static func -(left: RGBFloat, right: RGBFloat) -> CGFloat {
+        return abs(left.r-right.r) + abs(left.g-right.g) + abs(left.b-right.b)
+    }
 }
+
 
 struct TenPointAverageConstants {
     static let rows = 3
     static let cols = 3
 }
 
+class TenPointAverage {
+    var totalAvg : RGBFloat = RGBFloat(0,0,0)
+    var gridAvg : [[RGBFloat]] = Array(repeating: Array(repeating: RGBFloat(0,0,0), count: 3), count: 3)
+    
+    static func -(left: TenPointAverage, right: TenPointAverage) -> CGFloat {
+        var diff : CGFloat = 0.0
+        diff += left.totalAvg - right.totalAvg
+        for row in 0..<TenPointAverageConstants.rows {
+            for col in 0..<TenPointAverageConstants.cols {
+                diff += left.gridAvg[row][col] - right.gridAvg[row][col]
+            }
+        }
+        return diff
+    }
+}
+
 
 class TenPointAveraging: LibraryPreprocessing {
     
     private var inProgress : Bool
-    private var averages : [UIImage : TenPointAverage]
+    var averages : [PHAsset : TenPointAverage]
     private let imageManager : PHImageManager
     private var totalPhotos : Int
     private var photosComplete : Int
@@ -66,8 +93,10 @@ class TenPointAveraging: LibraryPreprocessing {
                 self.imageManager.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: PHImageRequestOptions(),
                                                resultHandler: {(result, info) -> Void in
                                                 if (result != nil) {
-                                                    self.processPhoto(image: result!, complete: {(tpa) -> Void in
-                                                        //TODO ADD TO IT
+                                                    let image = result!
+                                                    self.processPhoto(image: image.cgImage!, width: Int(image.size.width), height: Int(image.size.height), complete: {(tpa) -> Void in
+                                                        self.averages[asset] = tpa
+                                                        self.photosComplete += 1
                                                     })
                                                 }
                 })
@@ -85,22 +114,21 @@ class TenPointAveraging: LibraryPreprocessing {
         let cgImage = ctx.createCGImage(avgFilter!.outputImage!, from:avgFilter!.outputImage!.extent)!
         let data : UnsafePointer<UInt8> = CFDataGetBytePtr(cgImage.dataProvider!.data)
         let overallRGB = RGBFloat(CGFloat(data[0]), CGFloat(data[1]), CGFloat(data[2]))
-        print("overall RGB values for region: \(overallRGB)")
         return overallRGB
     }
     
-    func processPhoto(image: UIImage, complete: (TenPointAverage) -> Void) {
+    func processPhoto(image: CGImage, width: Int, height: Int, complete: (TenPointAverage) -> Void) {
         //Computes the average
-        let ciImage : CIImage = CIImage(image: image)!
-        var tpa = TenPointAverage()
-        let width = Int(image.size.width) / TenPointAverageConstants.cols
-        let height = Int(image.size.height) / TenPointAverageConstants.rows
+        let ciImage = CIImage(cgImage: image)
+        let tpa = TenPointAverage()
+        let colWidth = width / TenPointAverageConstants.cols
+        let colHeight = height / TenPointAverageConstants.rows
         for col in 0..<TenPointAverageConstants.cols {
             for row in 0..<TenPointAverageConstants.rows {
-                tpa.gridAvg[row][col] = self.getAvgOverRegion(image: ciImage, region: CGRect(x: col * width, y: row * height, width: width, height: height))
+                tpa.gridAvg[row][col] = self.getAvgOverRegion(image: ciImage, region: CGRect(x: col * colWidth, y: row * colHeight, width: colWidth, height: colHeight))
             }
         }
-        tpa.totalAvg = self.getAvgOverRegion(image: ciImage, region: ciImage.extent)
+        tpa.totalAvg = self.getAvgOverRegion(image: ciImage, region: CGRect(x: 0, y: 0, width: width, height: height))
         complete(tpa)
     }
     

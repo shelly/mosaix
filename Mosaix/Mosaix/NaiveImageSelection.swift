@@ -91,7 +91,7 @@ class NaiveImageSelection: ImageSelection {
                                                resultHandler: {(result, info) -> Void in
                                                 if (result != nil) {
                                                     do {
-                                                        let choiceRegion = CGRect(origin: CGPoint.zero, width: refRegion.width, height: refRegion.height)
+                                                        let choiceRegion = CGRect(x: 0.0, y: 0.0, width: refRegion.width, height: refRegion.height)
                                                         let fit : CGFloat = try self.compareRegions(refRegion: refRegion, otherImage: result!, otherRegion: choiceRegion)
                                                         if (bestMatch == nil || fit < bestMatch!.fit) {
                                                             bestMatch = ImageChoice(position: (row, col), image: result!, region: choiceRegion, fit: fit)
@@ -117,8 +117,7 @@ class NaiveImageSelection: ImageSelection {
 
         for row in 0 ... numRows-1 {
             for col in 0 ... numCols-1 {
-                let topLeft : CGPoint = CGPoint(x: col * gridSizePoints, y: row * gridSizePoints)
-                self.findBestMatch(row: row, col: col, refRegion: CGRect(origin: topLeft, width: gridSizePoints, height: gridSizePoints), onSelect: onSelect)
+                self.findBestMatch(row: row, col: col, refRegion: CGRect(x: col*gridSizePoints, y: row * gridSizePoints, width: gridSizePoints, height: gridSizePoints), onSelect: onSelect)
             }
         }
     }
