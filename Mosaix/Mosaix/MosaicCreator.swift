@@ -9,32 +9,6 @@
 import Foundation
 import UIKit
 
-
-// Represents a region of a UIImage
-class Region {
-    var topLeft : CGPoint
-    var bottomRight : CGPoint
-    
-    init(topLeft : CGPoint, bottomRight : CGPoint) {
-        self.topLeft = topLeft
-        self.bottomRight = bottomRight
-    }
-    
-    var height : Int {
-        get {
-            return Int(self.bottomRight.y - self.topLeft.y)
-        }
-    }
-    
-    var width : Int {
-        get {
-            return Int(self.bottomRight.x - self.topLeft.x)
-        }
-    }
-}
-
-typealias region = (topLeft: CGPoint, bottomRight: CGPoint)
-
 enum MosaicCreationError: Error {
     case MosaicCreationInProgress
     case QualityOutOfBounds
@@ -116,8 +90,9 @@ class MosaicCreator {
                 self.gridSpacesFilled += 1
                 UIGraphicsPushContext(self.compositeContext)
                 
-                let drawRect = CGRect(x: choice.position.col * Int(self._gridSizePoints) + Int(choice.region.topLeft.x),
-                                      y: choice.position.row * Int(self._gridSizePoints) + Int(choice.region.topLeft.y), width: choice.region.width, height: choice.region.height)
+                let drawRect = CGRect(x: choice.position.col * Int(self._gridSizePoints) + Int(choice.region.minX),
+                                      y: choice.position.row * Int(self._gridSizePoints) + Int(choice.region.minY),
+                                      width: Int(choice.region.width), height: Int(choice.region.height))
                 print("drawing to \(drawRect)")
                 self.compositeContext.draw(choice.image.cgImage!, in:drawRect)
                 UIGraphicsPopContext()

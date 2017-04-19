@@ -24,28 +24,19 @@ class MetalImageSelection: ImageSelection {
     private var allPhotos : PHFetchResult<PHAsset>?
     private var imageManager : PHImageManager
     private var skipSize : Int
+    private var tpa : TenPointAveraging
     
     required init(refImage: UIImage) {
         self.referenceImage = refImage
         self.imageManager = PHImageManager()
         self.allPhotos = nil
         self.skipSize = 0
-        PHPhotoLibrary.requestAuthorization { (status) in
-            switch status {
-            case .authorized:
-                let fetchOptions = PHFetchOptions()
-                self.allPhotos = PHAsset.fetchAssets(with: fetchOptions)
-            case .denied, .restricted:
-                print("Library Access Denied!")
-            case .notDetermined:
-                print("Library Access Not Determined!")
-            }
-        }
+        self.tpa = TenPointAveraging()
     }
     
 
     
-    private func compareRegions(refRegion: Region, otherImage: UIImage, otherRegion: Region) throws -> CGFloat {
+    private func compareRegions(refRegion: CGRect, otherImage: UIImage, otherRegion: CGRect) throws -> CGFloat {
         guard (refRegion.width == otherRegion.width && refRegion.height == otherRegion.height) else {
             throw NaiveSelectionError.RegionMismatch
         }
@@ -63,8 +54,11 @@ class MetalImageSelection: ImageSelection {
         return fit
     }
     
-    private func findBestMatch(row: Int, col: Int, refRegion: Region, onSelect : @escaping (ImageChoice) -> Void) {
-        print("(\(row), \(col)) finding best match (coordinates \(refRegion.topLeft) <-> \(refRegion.bottomRight)")
+    private func findBestMatch(row: Int, col: Int, refRegion: CGRect, onSelect : @escaping (ImageChoice) -> Void) {
+        print("(\(row), \(col)) finding best match.")
+        
+        
+        
         var bestMatch : ImageChoice? = nil
         allPhotos?.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             if (asset.mediaType == .image) {
@@ -75,7 +69,7 @@ class MetalImageSelection: ImageSelection {
                                                resultHandler: {(result, info) -> Void in
                                                 if (result != nil) {
                                                     do {
-                                                        let choiceRegion = Region(topLeft: CGPoint.zero, bottomRight: CGPoint(x: refRegion.width, y: refRegion.height))
+                                                        let choiceRegion = CGRect(x: 0, y: 0, width: Int(refRegion.width), height: Int(refRegion.height))
                                                         let fit : CGFloat = try self.compareRegions(refRegion: refRegion, otherImage: result!, otherRegion: choiceRegion)
                                                         if (bestMatch == nil || fit < bestMatch!.fit) {
                                                             bestMatch = ImageChoice(position: (row, col), image: result!, region: choiceRegion, fit: fit)
@@ -91,20 +85,22 @@ class MetalImageSelection: ImageSelection {
     }
     
     func select(gridSizePoints: Int, quality: Int, onSelect: @escaping (ImageChoice) -> Void) throws -> Void {
-        if (allPhotos == nil) {
-            throw ImageSelectionError.PreprocessingIncomplete
-        }
-        self.skipSize = MosaicCreationConstants.qualityMax - quality - MosaicCreationConstants.qualityMin
-        let numRows : Int = Int(self.referenceImage.size.height) / gridSizePoints
-        let numCols : Int = Int(self.referenceImage.size.width) / gridSizePoints
-        //        print("selecting with grid size \(gridSizePoints), \(numRows) rows, and \(numCols) columns.")
-        
-        for row in 0 ... numRows-1 {
-            for col in 0 ... numCols-1 {
-                let topLeft : CGPoint = CGPoint(x: col * gridSizePoints, y: row * gridSizePoints)
-                let bottomRight : CGPoint = CGPoint(x: (col + 1) * gridSizePoints, y: (row+1) * gridSizePoints)
-                self.findBestMatch(row: row, col: col, refRegion: Region(topLeft: topLeft, bottomRight: bottomRight), onSelect: onSelect)
+        //Pre-process library
+        print("Pre-processing library...")
+        try self.tpa.begin(complete: {() -> Void in
+            print("Done pre-processing.")
+            print("Finding best matches...")
+            
+            let numRows : Int = Int(self.referenceImage.size.height) / gridSizePoints
+            let numCols : Int = Int(self.referenceImage.size.width) / gridSizePoints
+            
+            for row in 0 ... numRows-1 {
+                for col in 0 ... numCols-1 {
+                    self.findBestMatch(row: row, col: col, refRegion: CGRect(x: col * gridSizePoints, y: row * gridSizePoints, width: gridSizePoints, height: gridSizePoints), onSelect: onSelect)
+                }
             }
-        }
+            
+        })
+        
     }
 }

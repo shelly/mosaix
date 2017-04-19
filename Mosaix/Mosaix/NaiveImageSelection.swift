@@ -61,7 +61,7 @@ class NaiveImageSelection: ImageSelection {
         return CGFloat(abs(redDiff) + abs(greenDiff) + abs(blueDiff)) / CGFloat(255.0)
     }
     
-    private func compareRegions(refRegion: Region, otherImage: UIImage, otherRegion: Region) throws -> CGFloat {
+    private func compareRegions(refRegion: CGRect, otherImage: UIImage, otherRegion: CGRect) throws -> CGFloat {
         guard (refRegion.width == otherRegion.width && refRegion.height == otherRegion.height) else {
             throw NaiveSelectionError.RegionMismatch
         }
@@ -69,18 +69,18 @@ class NaiveImageSelection: ImageSelection {
             throw NaiveSelectionError.InvalidSkipSize
         }
         var fit : CGFloat = 0.0
-        for deltaY in stride(from: 0, to: refRegion.height - 1, by: 1 + self.skipSize) {
-            for deltaX in stride(from: 0, to: refRegion.width - 1, by: 1 + self.skipSize) {
-                let refPoint = CGPoint(x:Int(refRegion.topLeft.x) + deltaX,y:Int(refRegion.topLeft.y) + deltaY)
-                let otherPoint = CGPoint(x:Int(otherRegion.topLeft.x) + deltaX, y: Int(otherRegion.topLeft.y) + deltaY)
+        for deltaY in stride(from: 0, to: Int(refRegion.height) - 1, by: 1 + self.skipSize) {
+            for deltaX in stride(from: 0, to: Int(refRegion.width) - 1, by: 1 + self.skipSize) {
+                let refPoint = CGPoint(x:Int(refRegion.minX) + deltaX,y:Int(refRegion.minY) + deltaY)
+                let otherPoint = CGPoint(x:Int(otherRegion.minX) + deltaX, y: Int(otherRegion.minY) + deltaY)
                 fit += self.comparePoints(refPoint: refPoint, otherImage: otherImage, otherPoint: otherPoint)
             }
         }
         return fit
     }
     
-    private func findBestMatch(row: Int, col: Int, refRegion: Region, onSelect : @escaping (ImageChoice) -> Void) {
-        print("(\(row), \(col)) finding best match (coordinates \(refRegion.topLeft) <-> \(refRegion.bottomRight)")
+    private func findBestMatch(row: Int, col: Int, refRegion: CGRect, onSelect : @escaping (ImageChoice) -> Void) {
+        print("(\(row), \(col)) finding best match.")
         var bestMatch : ImageChoice? = nil
         allPhotos?.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             if (asset.mediaType == .image) {
@@ -91,7 +91,7 @@ class NaiveImageSelection: ImageSelection {
                                                resultHandler: {(result, info) -> Void in
                                                 if (result != nil) {
                                                     do {
-                                                        let choiceRegion = Region(topLeft: CGPoint.zero, bottomRight: CGPoint(x: refRegion.width, y: refRegion.height))
+                                                        let choiceRegion = CGRect(origin: CGPoint.zero, width: refRegion.width, height: refRegion.height)
                                                         let fit : CGFloat = try self.compareRegions(refRegion: refRegion, otherImage: result!, otherRegion: choiceRegion)
                                                         if (bestMatch == nil || fit < bestMatch!.fit) {
                                                             bestMatch = ImageChoice(position: (row, col), image: result!, region: choiceRegion, fit: fit)
@@ -118,8 +118,7 @@ class NaiveImageSelection: ImageSelection {
         for row in 0 ... numRows-1 {
             for col in 0 ... numCols-1 {
                 let topLeft : CGPoint = CGPoint(x: col * gridSizePoints, y: row * gridSizePoints)
-                let bottomRight : CGPoint = CGPoint(x: (col + 1) * gridSizePoints, y: (row+1) * gridSizePoints)
-                self.findBestMatch(row: row, col: col, refRegion: Region(topLeft: topLeft, bottomRight: bottomRight), onSelect: onSelect)
+                self.findBestMatch(row: row, col: col, refRegion: CGRect(origin: topLeft, width: gridSizePoints, height: gridSizePoints), onSelect: onSelect)
             }
         }
     }

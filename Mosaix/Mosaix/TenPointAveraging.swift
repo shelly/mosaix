@@ -66,7 +66,9 @@ class TenPointAveraging: LibraryPreprocessing {
                 self.imageManager.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: PHImageRequestOptions(),
                                                resultHandler: {(result, info) -> Void in
                                                 if (result != nil) {
-                                                    self.processPhoto(image: result!, complete: complete)
+                                                    self.processPhoto(image: result!, complete: {(tpa) -> Void in
+                                                        //TODO ADD TO IT
+                                                    })
                                                 }
                 })
             }
@@ -87,7 +89,7 @@ class TenPointAveraging: LibraryPreprocessing {
         return overallRGB
     }
     
-    private func processPhoto(image: UIImage, complete: () -> Void) {
+    func processPhoto(image: UIImage, complete: (TenPointAverage) -> Void) {
         //Computes the average
         let ciImage : CIImage = CIImage(image: image)!
         var tpa = TenPointAverage()
@@ -99,11 +101,7 @@ class TenPointAveraging: LibraryPreprocessing {
             }
         }
         tpa.totalAvg = self.getAvgOverRegion(image: ciImage, region: ciImage.extent)
-        self.averages[image] = tpa
-        self.photosComplete += 1
-        if (self.photosComplete == self.totalPhotos) {
-            complete()
-        }
+        complete(tpa)
     }
     
     func progress() -> Int {
