@@ -81,20 +81,21 @@ class CreateMosaicViewController: UIViewController {
         
     }
     
-    //Launch composite photo creation
+    
     @IBAction func createCompositePhoto() {
-        print("Creating composite photo!!")
-        do {
-            try mosaicCreator.begin()
-        }
-        catch {
-            print("Error with calling mosaicCreator.begin.\n")
-        }
+        
     }
 
     //Restarting createMosaic screen 
     @IBAction func backToCreateMosaic(for segue: UIStoryboardSegue, sender: Any?) {
     }
     
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "CreateMosaicToCompositePhoto" {
+            if let CompositePhotoViewController = segue.destination as? CompositePhotoViewController {
+                CompositePhotoViewController.mosaicCreator = mosaicCreator
+            }
+        }
+    }
     
 }

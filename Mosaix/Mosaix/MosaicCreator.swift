@@ -52,7 +52,7 @@ struct MosaicCreationConstants {
 class MosaicCreator {
     
     private let imageSelector : ImageSelection
-    private let reference : UIImage
+    let reference : UIImage
     private var inProgress : Bool
     private var _gridSizePoints : Int = (MosaicCreationConstants.gridSizeMax + MosaicCreationConstants.gridSizeMin)/2
     private var _quality : Int = (MosaicCreationConstants.qualityMax + MosaicCreationConstants.qualityMin)/2
@@ -72,9 +72,9 @@ class MosaicCreator {
         self.reference = reference
         self.imageSelector = NaiveImageSelection(refImage: reference)
         
-        UIGraphicsBeginImageContextWithOptions(self.reference.size, true, 0.0)
+        UIGraphicsBeginImageContextWithOptions(self.reference.size, true, 1.0)
         self.compositeContext = UIGraphicsGetCurrentContext()!
-        UIGraphicsEndImageContext()
+        UIGraphicsPopContext()
         
         
     }

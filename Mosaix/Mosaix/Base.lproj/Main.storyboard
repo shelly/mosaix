@@ -148,7 +148,7 @@
                                 </state>
                                 <connections>
                                     <action selector="createCompositePhoto" destination="ipi-PF-cmT" eventType="touchUpInside" id="L9E-ia-hoi"/>
-                                    <segue destination="XUT-M6-D6C" kind="presentation" id="nF7-oO-tXN"/>
+                                    <segue destination="XUT-M6-D6C" kind="presentation" identifier="CreateMosaicToCompositePhoto" id="nF7-oO-tXN"/>
                                 </connections>
                             </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Grid Size" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="VhQ-vY-fvn">
@@ -225,6 +225,9 @@
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                     </view>
+                    <connections>
+                        <outlet property="compositePhoto" destination="BlF-77-TK7" id="hAH-Xw-iDE"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="XEV-Dq-913" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <exit id="cYD-I7-TC2" userLabel="Exit" sceneMemberID="exit"/>
