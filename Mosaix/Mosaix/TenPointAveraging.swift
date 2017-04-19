@@ -66,6 +66,7 @@ class TenPointAveraging: LibraryPreprocessing {
                 self.imageManager.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: PHImageRequestOptions(),
                                                resultHandler: {(result, info) -> Void in
                                                 if (result != nil) {
+                                                    asset.
                                                     self.processPhoto(image: result!, complete: complete)
                                                 }
                 })
@@ -99,6 +100,7 @@ class TenPointAveraging: LibraryPreprocessing {
             }
         }
         tpa.totalAvg = self.getAvgOverRegion(image: ciImage, region: ciImage.extent)
+        image.
         self.averages[image] = tpa
         self.photosComplete += 1
         if (self.photosComplete == self.totalPhotos) {

@@ -58,6 +58,9 @@ class MosaicCreator {
     private var _quality : Int = (MosaicCreationConstants.qualityMax + MosaicCreationConstants.qualityMin)/2
     private let compositeContext: CGContext
     
+    private var totalGridSpaces : Int
+    private var gridSpacesFilled : Int
+    
     var compositeImage : UIImage {
         get {
             UIGraphicsPushContext(self.compositeContext)
@@ -72,9 +75,12 @@ class MosaicCreator {
         self.reference = reference
         self.imageSelector = NaiveImageSelection(refImage: reference)
         
+        self.totalGridSpaces = 0
+        self.gridSpacesFilled = 0
+        
         UIGraphicsBeginImageContextWithOptions(self.reference.size, true, 0.0)
         self.compositeContext = UIGraphicsGetCurrentContext()!
-        UIGraphicsEndImageContext()
+        UIGraphicsPopContext()
         
         
     }
@@ -106,7 +112,10 @@ class MosaicCreator {
             throw MosaicCreationError.MosaicCreationInProgress
         } else {
             self.inProgress = true
+            self.totalGridSpaces = (Int(self.reference.size.width) / self._gridSizePoints) * (Int(self.reference.size.height) / self._gridSizePoints)
+            self.gridSpacesFilled = 0
             try self.imageSelector.select(gridSizePoints: self._gridSizePoints, quality: self._quality, onSelect: {(choice: ImageChoice) in
+                self.gridSpacesFilled += 1
                 UIGraphicsPushContext(self.compositeContext)
                 let drawRect = CGRect(x: Int(choice.region.topLeft.x), y: Int(choice.region.topLeft.y), width: choice.region.width, height: choice.region.height)
                 self.compositeContext.draw(choice.image.cgImage!, in:drawRect)
@@ -114,5 +123,10 @@ class MosaicCreator {
                 return
             })
         }
+    }
+    
+    func progress() -> Int {
+        if (!self.inProgress) {return 0}
+        return Int(100.0 * (Float(self.gridSpacesFilled) / Float(self.totalGridSpaces)))
     }
 }

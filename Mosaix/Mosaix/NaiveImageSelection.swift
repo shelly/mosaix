@@ -47,7 +47,6 @@ class NaiveImageSelection: ImageSelection {
     
     private func comparePoints(refPoint: CGPoint, otherImage: UIImage, otherPoint: CGPoint) -> CGFloat {
         
-        
         let otherPixelData = otherImage.cgImage!.dataProvider!.data
         
         let refData: UnsafePointer<UInt8> = CFDataGetBytePtr(self.referencePixelData)
@@ -115,11 +114,12 @@ class NaiveImageSelection: ImageSelection {
         let numRows : Int = Int(self.referenceImage.size.height) / gridSizePoints
         let numCols : Int = Int(self.referenceImage.size.width) / gridSizePoints
 //        print("selecting with grid size \(gridSizePoints), \(numRows) rows, and \(numCols) columns.")
+
         for row in 0 ... numRows-1 {
             for col in 0 ... numCols-1 {
                 let topLeft : CGPoint = CGPoint(x: col * gridSizePoints, y: row * gridSizePoints)
                 let bottomRight : CGPoint = CGPoint(x: (col + 1) * gridSizePoints, y: (row+1) * gridSizePoints)
-                findBestMatch(row: row, col: col, refRegion: Region(topLeft: topLeft, bottomRight: bottomRight), onSelect: onSelect)
+                self.findBestMatch(row: row, col: col, refRegion: Region(topLeft: topLeft, bottomRight: bottomRight), onSelect: onSelect)
             }
         }
     }
