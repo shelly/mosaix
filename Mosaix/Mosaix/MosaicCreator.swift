@@ -106,7 +106,7 @@ class MosaicCreator {
                                 complete()
                             }
                         } else {
-                            tick() //TODO MOVE OUT OF MAIN ASYNC
+                            tick()
                         }
                     })
                 } catch {

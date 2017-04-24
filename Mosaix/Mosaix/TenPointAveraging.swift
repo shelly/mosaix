@@ -8,6 +8,8 @@
 
 import Foundation
 import Photos
+import MetalKit
+import Metal
 
 
 class RGBFloat {
@@ -21,11 +23,16 @@ class RGBFloat {
         self.b = blue
     }
     
+    init(_ red : Int, _ green : Int, _ blue : Int) {
+        self.r = CGFloat(red)
+        self.g = CGFloat(green)
+        self.b = CGFloat(blue)
+    }
+    
     static func -(left: RGBFloat, right: RGBFloat) -> CGFloat {
         return abs(left.r-right.r) + abs(left.g-right.g) + abs(left.b-right.b)
     }
 }
-
 
 struct TenPointAverageConstants {
     static let rows = 3
@@ -48,21 +55,90 @@ class TenPointAverage {
     }
 }
 
+class MetalPipeline {
+    let device : MTLDevice
+    let commandQueue : MTLCommandQueue
+    let library: MTLLibrary
+    let NinePointAverage : MTLFunction
+    let pipelineState : MTLComputePipelineState
+    
+    init() {
+        self.device = MTLCreateSystemDefaultDevice()!
+        self.commandQueue = self.device.makeCommandQueue()
+        self.library = self.device.newDefaultLibrary()!
+        self.NinePointAverage = self.library.makeFunction(name: "findNinePointAverage")!
+        self.pipelineState = try self.device.makeComputePipelineState(function: self.NinePointAverage)
+    }
+    
+    func getImageTexture(image: CGImage) -> MTLTexture {
+        let rawData = calloc(image.height * image.width * 4, MemoryLayout<UInt8>.size)
+        let bytesPerRow = 4 * image.width
+        let options = CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+        let context = CGContext(
+            data: rawData,
+            width: image.width,
+            height: image.height,
+            bitsPerComponent: image.bitsPerComponent,
+            bytesPerRow: bytesPerRow,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: options
+        )
+        
+        context?.draw(image, in : CGRect(x:0, y: 0, width: image.width, height: image.height))
+        let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .rgba8Unorm,
+            width: image.width,
+            height: image.height,
+            mipmapped: true
+        )
+        
+        let texture : MTLTexture = self.device.makeTexture(descriptor: textureDescriptor)
+        texture.replace(region: MTLRegionMake2D(0, 0, image.width, image.height),
+                        mipmapLevel: 0,
+                        slice: 0,
+                        withBytes: rawData!,
+                        bytesPerRow: bytesPerRow,
+                        bytesPerImage: bytesPerRow * image.height)
+        free(rawData)
+        return texture
+    }
+    
+    func processImageTexture(texture: MTLTexture, complete : @escaping ([Int]) -> Void) {
+        let commandBuffer = self.commandQueue.makeCommandBuffer()
+        let commandEncoder = commandBuffer.makeComputeCommandEncoder()
+        commandEncoder.setComputePipelineState(self.pipelineState)
+        commandEncoder.setTexture(texture, at: 0)
+        let bufferLength = MemoryLayout<Int>.size * 3 * 9
+        let resultBuffer = self.device.makeBuffer(length: bufferLength)
+        commandEncoder.setBuffer(resultBuffer, offset: 0, at: 0)
+        commandBuffer.commit()
+        commandBuffer.addCompletedHandler({(buffer) -> Void in
+            let results : [Int] = Array(UnsafeBufferPointer(start: resultBuffer.contents(), count: bufferLength))
+            complete(results)
+        })
+    }
+}
 
 class TenPointAveraging: LibraryPreprocessing {
     
     private var inProgress : Bool
     var averages : [PHAsset : TenPointAverage]
-    private let imageManager : PHImageManager
+    private static var imageManager : PHImageManager?
     private var totalPhotos : Int
     private var photosComplete : Int
+    private static var metal : MetalPipeline? = nil
     
     init() {
         self.inProgress = false
         self.averages = [:] // empty dictionary
-        self.imageManager = PHImageManager()
         self.totalPhotos = 0
         self.photosComplete = 0
+        if (TenPointAveraging.imageManager == nil) {
+            TenPointAveraging.imageManager = PHImageManager()
+        }
+        if (TenPointAveraging.metal == nil) {
+            TenPointAveraging.metal = MetalPipeline()
+        }
     }
     
     func begin(complete: @escaping () -> Void) throws -> Void {
@@ -95,11 +171,11 @@ class TenPointAveraging: LibraryPreprocessing {
         fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             if (asset.mediaType == .image) {
                 //Asynchronously grab image and save the values.
-                self.imageManager.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: PHImageRequestOptions(),
+                TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: PHImageRequestOptions(),
                                                resultHandler: {(result, info) -> Void in
                                                 if (result != nil) {
                                                     let image = result!
-                                                    self.processPhoto(image: image.cgImage!, width: Int(image.size.width), height: Int(image.size.height), complete: {(tpa) -> Void in
+                                                    self.processPhoto(image: image.cgImage!, complete: {(tpa) -> Void in
                                                         self.averages[asset] = tpa
                                                         self.photosComplete += 1
                                                         if (self.photosComplete == self.totalPhotos) {
@@ -126,20 +202,38 @@ class TenPointAveraging: LibraryPreprocessing {
         return overallRGB
     }
     
-    func processPhoto(image: CGImage, width: Int, height: Int, complete: (TenPointAverage) -> Void) {
+
+    
+    func processPhoto(image: CGImage, complete: @escaping (TenPointAverage) -> Void) {
         //Computes the average
         print("processing photo.")
-        let ciImage = CIImage(cgImage: image)
-        let tpa = TenPointAverage()
-        let colWidth = width / TenPointAverageConstants.cols
-        let colHeight = height / TenPointAverageConstants.rows
-        for col in 0..<TenPointAverageConstants.cols {
-            for row in 0..<TenPointAverageConstants.rows {
-                tpa.gridAvg[row][col] = self.getAvgOverRegion(image: ciImage, region: CGRect(x: col * colWidth, y: row * colHeight, width: colWidth, height: colHeight))
+        let texture = TenPointAveraging.metal?.getImageTexture(image: image)
+        TenPointAveraging.metal?.processImageTexture(texture: texture!, complete: {(result : [Int]) -> Void in
+            print("Done getting averages!")
+            print(result)
+            let tba = TenPointAverage()
+            for i in 0..<3 {
+                for j in 0..<3 {
+                    let index = 3 * i + j
+                    tba.totalAvg.r += CGFloat(result[index])/9
+                    tba.totalAvg.g += CGFloat(result[index+1])/9
+                    tba.totalAvg.b += CGFloat(result[index+2])/9
+                    tba.gridAvg[i][j] = RGBFloat(result[index], result[index+1], result[index+2])
+                }
             }
-        }
-        tpa.totalAvg = self.getAvgOverRegion(image: ciImage, region: CGRect(x: 0, y: 0, width: width, height: height))
-        complete(tpa)
+            complete(tba)
+        })
+//        let ciImage = CIImage(cgImage: image)
+//        let tpa = TenPointAverage()
+//        let colWidth = width / TenPointAverageConstants.cols
+//        let colHeight = height / TenPointAverageConstants.rows
+//        for col in 0..<TenPointAverageConstants.cols {
+//            for row in 0..<TenPointAverageConstants.rows {
+//                tpa.gridAvg[row][col] = self.getAvgOverRegion(image: ciImage, region: CGRect(x: col * colWidth, y: row * colHeight, width: colWidth, height: colHeight))
+//            }
+//        }
+//        tpa.totalAvg = self.getAvgOverRegion(image: ciImage, region: CGRect(x: 0, y: 0, width: width, height: height))
+//        complete(tpa)
     }
     
     func progress() -> Int {
