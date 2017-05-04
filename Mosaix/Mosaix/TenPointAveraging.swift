@@ -60,17 +60,26 @@ class MetalPipeline {
     let commandQueue : MTLCommandQueue
     let library: MTLLibrary
     let NinePointAverage : MTLFunction
-    let pipelineState : MTLComputePipelineState
+    var pipelineState : MTLComputePipelineState? = nil
     
     init() {
         self.device = MTLCreateSystemDefaultDevice()!
         self.commandQueue = self.device.makeCommandQueue()
         self.library = self.device.newDefaultLibrary()!
         self.NinePointAverage = self.library.makeFunction(name: "findNinePointAverage")!
-        self.pipelineState = try self.device.makeComputePipelineState(function: self.NinePointAverage)
+        do {
+            self.pipelineState = try self.device.makeComputePipelineState(function: self.NinePointAverage)
+        } catch {
+            print("Error initializing pipeline state!")
+        }
     }
     
-    func getImageTexture(image: CGImage) -> MTLTexture {
+    func getImageTexture(image: CGImage) throws -> MTLTexture {
+        let textureLoader = MTKTextureLoader(device: self.device)
+        return try textureLoader.newTexture(with: image)
+    }
+    
+    private func getImageTextureRaw(image: CGImage) -> MTLTexture {
         let rawData = calloc(image.height * image.width * 4, MemoryLayout<UInt8>.size)
         let bytesPerRow = 4 * image.width
         let options = CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
@@ -83,7 +92,7 @@ class MetalPipeline {
             space: CGColorSpaceCreateDeviceRGB(),
             bitmapInfo: options
         )
-        
+
         context?.draw(image, in : CGRect(x:0, y: 0, width: image.width, height: image.height))
         let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
             pixelFormat: .rgba8Unorm,
@@ -91,7 +100,7 @@ class MetalPipeline {
             height: image.height,
             mipmapped: true
         )
-        
+
         let texture : MTLTexture = self.device.makeTexture(descriptor: textureDescriptor)
         texture.replace(region: MTLRegionMake2D(0, 0, image.width, image.height),
                         mipmapLevel: 0,
@@ -104,18 +113,21 @@ class MetalPipeline {
     }
     
     func processImageTexture(texture: MTLTexture, complete : @escaping ([Int]) -> Void) {
+        print("processing image texture.")
         let commandBuffer = self.commandQueue.makeCommandBuffer()
         let commandEncoder = commandBuffer.makeComputeCommandEncoder()
-        commandEncoder.setComputePipelineState(self.pipelineState)
+        commandEncoder.setComputePipelineState(self.pipelineState!)
         commandEncoder.setTexture(texture, at: 0)
         let bufferLength = MemoryLayout<Int>.size * 3 * 9
         let resultBuffer = self.device.makeBuffer(length: bufferLength)
         commandEncoder.setBuffer(resultBuffer, offset: 0, at: 0)
-        commandBuffer.commit()
+        commandEncoder.endEncoding()
         commandBuffer.addCompletedHandler({(buffer) -> Void in
-            let results : [Int] = Array(UnsafeBufferPointer(start: resultBuffer.contents(), count: bufferLength))
+            let results : [Int] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: Int.self), count: bufferLength))
             complete(results)
         })
+        print("committing")
+        commandBuffer.commit()
     }
 }
 
@@ -141,7 +153,7 @@ class TenPointAveraging: LibraryPreprocessing {
         }
     }
     
-    func begin(complete: @escaping () -> Void) throws -> Void {
+    func preprocess(complete: @escaping () -> Void) throws -> Void {
         guard (self.inProgress == false) else {
             throw LibraryPreprocessingError.PreprocessingInProgress
         }
@@ -168,9 +180,14 @@ class TenPointAveraging: LibraryPreprocessing {
     private func processAllPhotos(fetchResult: PHFetchResult<PHAsset>, complete: @escaping () -> Void) {
         self.totalPhotos = fetchResult.count
         self.photosComplete = 0
+        var i : Int = 0
         fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             if (asset.mediaType == .image) {
                 //Asynchronously grab image and save the values.
+                i += 1
+                if (i > 4) {
+                    stop.pointee = true
+                }
                 TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: PHImageRequestOptions(),
                                                resultHandler: {(result, info) -> Void in
                                                 if (result != nil) {
@@ -204,10 +221,15 @@ class TenPointAveraging: LibraryPreprocessing {
     
 
     
-    func processPhoto(image: CGImage, complete: @escaping (TenPointAverage) -> Void) {
+    func processPhoto(image: CGImage, complete: @escaping (TenPointAverage) throws -> Void) {
         //Computes the average
         print("processing photo.")
-        let texture = TenPointAveraging.metal?.getImageTexture(image: image)
+        var texture : MTLTexture? = nil
+        do {
+            texture = try TenPointAveraging.metal?.getImageTexture(image: image)
+        } catch {
+            print("Error getting image texture!")
+        }
         TenPointAveraging.metal?.processImageTexture(texture: texture!, complete: {(result : [Int]) -> Void in
             print("Done getting averages!")
             print(result)
@@ -221,7 +243,11 @@ class TenPointAveraging: LibraryPreprocessing {
                     tba.gridAvg[i][j] = RGBFloat(result[index], result[index+1], result[index+2])
                 }
             }
-            complete(tba)
+            do {
+                try complete(tba)
+            } catch {
+                print("Error in completion callback for processing photo.")
+            }
         })
 //        let ciImage = CIImage(cgImage: image)
 //        let tpa = TenPointAverage()
@@ -236,7 +262,7 @@ class TenPointAveraging: LibraryPreprocessing {
 //        complete(tpa)
     }
     
-    func progress() -> Int {
+    func preprocessProgress() -> Int {
         if (!self.inProgress) {return 0}
         return Int(100.0 * Float(self.photosComplete) / Float(self.totalPhotos))
     }

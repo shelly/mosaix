@@ -10,9 +10,6 @@ import UIKit
 import Metal
 
 class ChoosePhotoViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-    
-    // The Metal device we use to perform Metal operations
-    var device: MTLDevice!
     var pickedImage: UIImage!
     var imagePicker = UIImagePickerController()
     
@@ -20,7 +17,6 @@ class ChoosePhotoViewController: UIViewController, UINavigationControllerDelegat
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        device = MTLCreateSystemDefaultDevice()
         
     }
 

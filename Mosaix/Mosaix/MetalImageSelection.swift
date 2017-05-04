@@ -63,7 +63,7 @@ class MetalImageSelection: ImageSelection {
     func select(gridSizePoints: Int, quality: Int, onSelect: @escaping (ImageChoice) -> Void) throws -> Void {
         //Pre-process library
         print("Pre-processing library...")
-        try self.tpa.begin(complete: {() -> Void in
+        try self.tpa.preprocess(complete: {() -> Void in
             print("Done pre-processing.")
             print("Finding best matches...")
             
