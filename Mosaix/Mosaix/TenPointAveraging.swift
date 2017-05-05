@@ -29,8 +29,22 @@ class RGBFloat : CustomStringConvertible {
         self.b = CGFloat(blue)
     }
     
+    func get(_ index: Int) -> CGFloat {
+        if (index == 0) {
+            return self.r
+        } else if (index == 1) {
+            return self.g
+        } else {
+            return self.b
+        }
+    }
+    
     static func -(left: RGBFloat, right: RGBFloat) -> CGFloat {
         return abs(left.r-right.r) + abs(left.g-right.g) + abs(left.b-right.b)
+    }
+    
+    static func ==(left: RGBFloat, right: RGBFloat) -> Bool {
+        return left.r == right.r && left.g == right.g && left.b == right.b
     }
     
     var description : String {
@@ -49,13 +63,25 @@ class TenPointAverage {
     
     static func -(left: TenPointAverage, right: TenPointAverage) -> CGFloat {
         var diff : CGFloat = 0.0
-        diff += left.totalAvg - right.totalAvg
+        diff += (left.totalAvg - right.totalAvg)*(left.totalAvg - right.totalAvg)
         for row in 0..<TenPointAverageConstants.rows {
             for col in 0..<TenPointAverageConstants.cols {
-                diff += left.gridAvg[row][col] - right.gridAvg[row][col]
+                
+                diff += (left.gridAvg[row][col] - right.gridAvg[row][col]) * (left.gridAvg[row][col] - right.gridAvg[row][col])
             }
         }
         return diff
+    }
+    
+    static func ==(left: TenPointAverage, right: TenPointAverage) -> Bool {
+        for i in 0 ..< 3 {
+            for j in 0 ..< 3 {
+                if !(left.gridAvg[i][j] == right.gridAvg[i][j]) {
+                    return false
+                }
+            }
+        }
+        return true
     }
 }
 
@@ -150,7 +176,7 @@ class TenPointAveraging: PhotoProcessor {
     
     init() {
         self.inProgress = false
-        self.storage = TPADictionary()
+        self.storage = KDTree()
         self.totalPhotos = 0
         self.photosComplete = 0
         if (TenPointAveraging.imageManager == nil) {
