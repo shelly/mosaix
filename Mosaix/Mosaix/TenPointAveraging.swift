@@ -170,7 +170,10 @@ class TenPointAveraging: PhotoProcessor {
             switch status {
             case .authorized:
                 let fetchOptions = PHFetchOptions()
-                self.processAllPhotos(fetchResult: PHAsset.fetchAssets(with: fetchOptions), complete: complete)
+                self.processAllPhotos(fetchResult: PHAsset.fetchAssets(with: fetchOptions), complete: {() -> Void in
+                    //Save to file
+                    complete()
+                })
             case .denied, .restricted:
                 print("Library Access Denied!")
             case .notDetermined:
