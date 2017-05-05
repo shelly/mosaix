@@ -13,7 +13,7 @@ struct ImageChoice {
     var position    : (row: Int, col: Int)
     var image       : UIImage
     var region      : CGRect
-    var fit         : CGFloat // Represents how good the fit is. Zero is best.
+    var fit         : Float // Represents how good the fit is. Zero is best.
 }
 
 enum ImageSelectionError: Error {

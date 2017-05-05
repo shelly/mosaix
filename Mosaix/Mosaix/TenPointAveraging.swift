@@ -138,10 +138,11 @@ class MetalPipeline {
     }
 }
 
-class TenPointAveraging: LibraryPreprocessing {
+class TenPointAveraging: PhotoProcessor {
+
     
     private var inProgress : Bool
-    var averages : [PHAsset : TenPointAverage]
+    private var storage : TPAStorage
     private static var imageManager : PHImageManager?
     private var totalPhotos : Int
     private var photosComplete : Int
@@ -149,7 +150,7 @@ class TenPointAveraging: LibraryPreprocessing {
     
     init() {
         self.inProgress = false
-        self.averages = [:] // empty dictionary
+        self.storage = TPADictionary()
         self.totalPhotos = 0
         self.photosComplete = 0
         if (TenPointAveraging.imageManager == nil) {
@@ -162,7 +163,7 @@ class TenPointAveraging: LibraryPreprocessing {
     
     func preprocess(complete: @escaping () -> Void) throws -> Void {
         guard (self.inProgress == false) else {
-            throw LibraryPreprocessingError.PreprocessingInProgress
+            throw LibraryProcessingError.PreprocessingInProgress
         }
         self.inProgress = true
         PHPhotoLibrary.requestAuthorization { (status) in
@@ -183,6 +184,10 @@ class TenPointAveraging: LibraryPreprocessing {
 //        let dirURL = manager.URLForDirectory(.DocumentDirectory, inDomain: .UserDomainmask, appropriateForURL: nil, create: false, error: nil))
     }
     
+    func findNearestMatch(tpa: TenPointAverage) -> (PHAsset, Float)? {
+        return self.storage.findNearestMatch(to: tpa)
+    }
+    
  
     private func processAllPhotos(fetchResult: PHFetchResult<PHAsset>, complete: @escaping () -> Void) {
         self.totalPhotos = fetchResult.count
@@ -196,7 +201,7 @@ class TenPointAveraging: LibraryPreprocessing {
                 let _ = autoreleasepool {
                     TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: options,
                                                    resultHandler: {(result, info) -> Void in
-                                                    if (result != nil && self.averages[asset] == nil) {
+                                                    if (result != nil && !self.storage.isMember(asset)) {
                                                         i += 1
                                                         if (i > 300) {
                                                             stop.pointee = true
@@ -204,7 +209,7 @@ class TenPointAveraging: LibraryPreprocessing {
                                                         }
                                                         self.processPhoto(image: result!.cgImage!, complete: {(tpa) -> Void in
                                                             if (tpa != nil) {
-                                                                self.averages[asset] = tpa!
+                                                                self.storage.insert(asset: asset, tpa: tpa!)
                                                             }
                                                             self.photosComplete += 1
                                                             if (self.photosComplete == self.totalPhotos) {
@@ -227,7 +232,7 @@ class TenPointAveraging: LibraryPreprocessing {
         })
     }
     
-    func processPhoto(image: CGImage, complete: @escaping (TenPointAverage?) throws -> Void) {
+    func processPhoto(image: CGImage, complete: @escaping (TenPointAverage?) throws -> Void) -> Void {
         //Computes the average
         var texture : MTLTexture? = nil
         do {
@@ -264,6 +269,10 @@ class TenPointAveraging: LibraryPreprocessing {
     func preprocessProgress() -> Int {
         if (!self.inProgress) {return 0}
         return Int(100.0 * Float(self.photosComplete) / Float(self.totalPhotos))
+    }
+    
+    func progress() -> Int {
+        return 0 //TODO 
     }
     
 }

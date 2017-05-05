@@ -18,7 +18,7 @@ class CompositePhotoViewController: UIViewController {
         
         do {
             try self.mosaicCreator.begin(tick: {() -> Void in
-                print("tick!")
+//                print("tick!")
                 self.compositePhoto.image = self.mosaicCreator.compositeImage
             }, complete: {() -> Void in
                 // This will be called when the mosaic is complete.

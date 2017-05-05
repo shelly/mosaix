@@ -67,11 +67,9 @@ kernel void findNinePointAverage(
             sum.g = sum.g * 255 / (numRows * squareWidth);
             sum.b = sum.b * 255 / (numRows * squareWidth);
         
-//        if (threadId == 0) {
             atomic_fetch_add_explicit(&red, int(sum.r), memory_order_relaxed);
             atomic_fetch_add_explicit(&green, int(sum.g), memory_order_relaxed);
             atomic_fetch_add_explicit(&blue, int(sum.b), memory_order_relaxed);
-//        }
         }
         threadgroup_barrier(mem_flags::mem_device);
         

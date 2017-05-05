@@ -7,8 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D84014FF1EBCFAA2004A3C44 /* KDTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84014FE1EBCFAA2004A3C44 /* KDTree.swift */; };
+		D84015021EBCFBFE004A3C44 /* TPAStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84015011EBCFBFE004A3C44 /* TPAStorage.swift */; };
+		D84015041EBD0442004A3C44 /* TPADictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84015031EBD0442004A3C44 /* TPADictionary.swift */; };
 		D86AD3701EA6BF5100E374BD /* TenPointAveraging.swift in Sources */ = {isa = PBXBuildFile; fileRef = D86AD36F1EA6BF5100E374BD /* TenPointAveraging.swift */; };
-		D86AD3721EA6BF5B00E374BD /* Preprocessing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D86AD3711EA6BF5B00E374BD /* Preprocessing.swift */; };
+		D86AD3721EA6BF5B00E374BD /* PhotoProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D86AD3711EA6BF5B00E374BD /* PhotoProcessor.swift */; };
 		D86AD3741EA7D65C00E374BD /* TenPointAveraging.metal in Sources */ = {isa = PBXBuildFile; fileRef = D86AD3731EA7D65C00E374BD /* TenPointAveraging.metal */; };
 		D888EDBA1E9D8D360046AF9F /* ImageSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D888EDB91E9D8D360046AF9F /* ImageSelection.swift */; };
 		D888EDBD1E9D91EF0046AF9F /* NaiveImageSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D888EDBC1E9D91EF0046AF9F /* NaiveImageSelection.swift */; };
@@ -45,8 +48,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D84014FE1EBCFAA2004A3C44 /* KDTree.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KDTree.swift; sourceTree = "<group>"; };
+		D84015011EBCFBFE004A3C44 /* TPAStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TPAStorage.swift; sourceTree = "<group>"; };
+		D84015031EBD0442004A3C44 /* TPADictionary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TPADictionary.swift; sourceTree = "<group>"; };
 		D86AD36F1EA6BF5100E374BD /* TenPointAveraging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TenPointAveraging.swift; sourceTree = "<group>"; };
-		D86AD3711EA6BF5B00E374BD /* Preprocessing.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Preprocessing.swift; sourceTree = "<group>"; };
+		D86AD3711EA6BF5B00E374BD /* PhotoProcessor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoProcessor.swift; sourceTree = "<group>"; };
 		D86AD3731EA7D65C00E374BD /* TenPointAveraging.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = TenPointAveraging.metal; sourceTree = "<group>"; };
 		D888EDB91E9D8D360046AF9F /* ImageSelection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImageSelection.swift; sourceTree = "<group>"; };
 		D888EDBC1E9D91EF0046AF9F /* NaiveImageSelection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NaiveImageSelection.swift; sourceTree = "<group>"; };
@@ -96,14 +102,25 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		D86AD36E1EA6B9D800E374BD /* Preprocessing */ = {
+		D84015001EBCFB90004A3C44 /* TPAStorage */ = {
 			isa = PBXGroup;
 			children = (
+				D84014FE1EBCFAA2004A3C44 /* KDTree.swift */,
+				D84015011EBCFBFE004A3C44 /* TPAStorage.swift */,
+				D84015031EBD0442004A3C44 /* TPADictionary.swift */,
+			);
+			name = TPAStorage;
+			sourceTree = "<group>";
+		};
+		D86AD36E1EA6B9D800E374BD /* PhotoProcessor */ = {
+			isa = PBXGroup;
+			children = (
+				D84015001EBCFB90004A3C44 /* TPAStorage */,
 				D86AD36F1EA6BF5100E374BD /* TenPointAveraging.swift */,
 				D86AD3731EA7D65C00E374BD /* TenPointAveraging.metal */,
-				D86AD3711EA6BF5B00E374BD /* Preprocessing.swift */,
+				D86AD3711EA6BF5B00E374BD /* PhotoProcessor.swift */,
 			);
-			name = Preprocessing;
+			name = PhotoProcessor;
 			sourceTree = "<group>";
 		};
 		D888EDBB1E9D91D30046AF9F /* ImageSelection */ = {
@@ -147,7 +164,7 @@
 		D8BDDFC31E9D570200759851 /* Mosaix */ = {
 			isa = PBXGroup;
 			children = (
-				D86AD36E1EA6B9D800E374BD /* Preprocessing */,
+				D86AD36E1EA6B9D800E374BD /* PhotoProcessor */,
 				D8BDDFC41E9D570200759851 /* AppDelegate.swift */,
 				D888EDC21EA197730046AF9F /* MosaicCreation */,
 				D888EDBB1E9D91D30046AF9F /* ImageSelection */,
@@ -335,10 +352,13 @@
 				D86AD3741EA7D65C00E374BD /* TenPointAveraging.metal in Sources */,
 				D8BDDFC71E9D570200759851 /* ChoosePhotoViewController.swift in Sources */,
 				D8BDDFF61E9D6D4500759851 /* OptionsViewController.swift in Sources */,
+				D84014FF1EBCFAA2004A3C44 /* KDTree.swift in Sources */,
+				D84015041EBD0442004A3C44 /* TPADictionary.swift in Sources */,
 				D8BDDFC51E9D570200759851 /* AppDelegate.swift in Sources */,
+				D84015021EBCFBFE004A3C44 /* TPAStorage.swift in Sources */,
 				E756AFC91E9D958A005E2950 /* CompositePhotoViewController.swift in Sources */,
 				E756AFCB1E9D95C8005E2950 /* CreateMosaicViewController.swift in Sources */,
-				D86AD3721EA6BF5B00E374BD /* Preprocessing.swift in Sources */,
+				D86AD3721EA6BF5B00E374BD /* PhotoProcessor.swift in Sources */,
 				D8BDDFCD1E9D570200759851 /* Mosaix.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

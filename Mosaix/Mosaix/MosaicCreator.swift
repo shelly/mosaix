@@ -90,7 +90,6 @@ class MosaicCreator {
             self.inProgress = true
             self.totalGridSpaces = (Int(self.reference.size.width) / self._gridSizePoints) * (Int(self.reference.size.height) / self._gridSizePoints)
             self.gridSpacesFilled = 0
-//            DispatchQueue.global(qos: .background).async {
                 do {
                     try self.imageSelector.select(gridSizePoints: self._gridSizePoints, quality: self._quality, onSelect: {(choice: ImageChoice) in
                         self.gridSpacesFilled += 1
@@ -105,10 +104,8 @@ class MosaicCreator {
 //                        self.compositeContext.draw(choice.image.cgImage!, in:drawRect)
                         UIGraphicsPopContext()
                         if (self.gridSpacesFilled == self.totalGridSpaces) {
-//                            DispatchQueue.main.async {
                                 self.inProgress = false
                                 complete()
-//                            }
                         } else {
                             tick()
                         }
@@ -116,8 +113,6 @@ class MosaicCreator {
                 } catch {
                     print("Error selecting image: \(error)")
                 }
-//            }
-
         }
     }
     
