@@ -44,7 +44,7 @@ class MetalImageSelection: ImageSelection {
             var bestFit : PHAsset? = nil
             var bestDiff : CGFloat = 0.0
             for (asset, assetTPA) in self.tpa.averages {
-                let diff = assetTPA - refTPA
+                let diff = assetTPA - refTPA!
                 if (bestFit == nil || diff < bestDiff) {
                     bestFit = asset
                     bestDiff = diff
