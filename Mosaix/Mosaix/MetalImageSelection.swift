@@ -37,10 +37,11 @@ class MetalImageSelection: ImageSelection {
     }
     
     private func findBestMatch(row: Int, col: Int, refRegion: CGRect, onSelect : @escaping (ImageChoice) -> Void) {
-        print("(\(row), \(col)) finding best match.")
+//        print("(\(row), \(col)) finding best match.")
         let croppedImage : CGImage = self.refCGImage.cropping(to: refRegion)!
-        print("finding best match for region of size \(croppedImage.width) x \(croppedImage.height)")
+//        print("finding best match for region of size \(croppedImage.width) x \(croppedImage.height)")
         self.tpa.processPhoto(image: croppedImage, complete: {(refTPA) -> Void in
+            print("\(refTPA!.gridAvg)")
             var bestFit : PHAsset? = nil
             var bestDiff : CGFloat = 0.0
             for (asset, assetTPA) in self.tpa.averages {
@@ -73,6 +74,7 @@ class MetalImageSelection: ImageSelection {
             
             for row in 0 ... numRows-1 {
                 for col in 0 ... numCols-1 {
+                    print("processing \(row), \(col)")
                     self.findBestMatch(row: row, col: col, refRegion: CGRect(x: col * gridSizePoints, y: row * gridSizePoints, width: gridSizePoints, height: gridSizePoints), onSelect: onSelect)
                 }
             }

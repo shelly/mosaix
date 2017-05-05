@@ -51,8 +51,10 @@ class MosaicCreator {
         self.totalGridSpaces = 0
         self.gridSpacesFilled = 0
         
-        UIGraphicsBeginImageContextWithOptions(self.reference.size, true, 0.0)
+        UIGraphicsBeginImageContextWithOptions(self.reference.size, false, 0)
         self.compositeContext = UIGraphicsGetCurrentContext()!
+//        self.compositeContext.translateBy(x: 0, y: self.reference.size.height)
+//        self.compositeContext.scaleBy(x: 1, y: -1.0)
         UIGraphicsPopContext()
         
         
@@ -88,7 +90,7 @@ class MosaicCreator {
             self.inProgress = true
             self.totalGridSpaces = (Int(self.reference.size.width) / self._gridSizePoints) * (Int(self.reference.size.height) / self._gridSizePoints)
             self.gridSpacesFilled = 0
-            DispatchQueue.global(qos: .background).async {
+//            DispatchQueue.global(qos: .background).async {
                 do {
                     try self.imageSelector.select(gridSizePoints: self._gridSizePoints, quality: self._quality, onSelect: {(choice: ImageChoice) in
                         self.gridSpacesFilled += 1
@@ -97,22 +99,24 @@ class MosaicCreator {
                         let drawRect = CGRect(x: choice.position.col * Int(self._gridSizePoints) + Int(choice.region.minX),
                                                   y: choice.position.row * Int(self._gridSizePoints) + Int(choice.region.minY),
                                                   width: Int(choice.region.width), height: Int(choice.region.height))
-                        print("drawing to \(drawRect)")
-                        self.compositeContext.draw(choice.image.cgImage!, in:drawRect)
+//                        print("drawing to \(drawRect)")
+                        choice.image.draw(in: drawRect)
+//
+//                        self.compositeContext.draw(choice.image.cgImage!, in:drawRect)
                         UIGraphicsPopContext()
                         if (self.gridSpacesFilled == self.totalGridSpaces) {
-                            DispatchQueue.main.async {
+//                            DispatchQueue.main.async {
                                 self.inProgress = false
                                 complete()
-                            }
+//                            }
                         } else {
                             tick()
                         }
                     })
                 } catch {
-                    print("Error selecting image!")
+                    print("Error selecting image: \(error)")
                 }
-            }
+//            }
 
         }
     }

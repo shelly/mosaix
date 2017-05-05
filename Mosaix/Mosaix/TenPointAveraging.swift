@@ -12,7 +12,7 @@ import MetalKit
 import Metal
 
 
-class RGBFloat {
+class RGBFloat : CustomStringConvertible {
     var r : CGFloat
     var g: CGFloat
     var b: CGFloat
@@ -31,6 +31,10 @@ class RGBFloat {
     
     static func -(left: RGBFloat, right: RGBFloat) -> CGFloat {
         return abs(left.r-right.r) + abs(left.g-right.g) + abs(left.b-right.b)
+    }
+    
+    var description : String {
+        return "(\(self.r), \(self.g), \(self.b))"
     }
 }
 
@@ -183,6 +187,7 @@ class TenPointAveraging: LibraryPreprocessing {
     private func processAllPhotos(fetchResult: PHFetchResult<PHAsset>, complete: @escaping () -> Void) {
         self.totalPhotos = fetchResult.count
         self.photosComplete = 0
+        var i : Int = 0
         fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             if (asset.mediaType == .image) {
                 //Asynchronously grab image and save the values.
@@ -192,6 +197,11 @@ class TenPointAveraging: LibraryPreprocessing {
                     TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: options,
                                                    resultHandler: {(result, info) -> Void in
                                                     if (result != nil && self.averages[asset] == nil) {
+                                                        i += 1
+                                                        if (i > 300) {
+                                                            stop.pointee = true
+                                                            complete()
+                                                        }
                                                         self.processPhoto(image: result!.cgImage!, complete: {(tpa) -> Void in
                                                             if (tpa != nil) {
                                                                 self.averages[asset] = tpa!
