@@ -39,6 +39,7 @@ class MetalImageSelection: ImageSelection {
     private func findBestMatch(row: Int, col: Int, refRegion: CGRect, onSelect : @escaping (ImageChoice) -> Void) {
         print("(\(row), \(col)) finding best match.")
         let croppedImage : CGImage = self.refCGImage.cropping(to: refRegion)!
+        print("finding best match for region of size \(croppedImage.width) x \(croppedImage.height)")
         self.tpa.processPhoto(image: croppedImage, complete: {(refTPA) -> Void in
             var bestFit : PHAsset? = nil
             var bestDiff : CGFloat = 0.0

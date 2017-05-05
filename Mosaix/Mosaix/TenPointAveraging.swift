@@ -112,22 +112,25 @@ class MetalPipeline {
         return texture
     }
     
-    func processImageTexture(texture: MTLTexture, complete : @escaping ([Int]) -> Void) {
-        print("processing image texture.")
+    func processImageTexture(texture: MTLTexture, complete : @escaping ([UInt32]) -> Void) {
         let commandBuffer = self.commandQueue.makeCommandBuffer()
         let commandEncoder = commandBuffer.makeComputeCommandEncoder()
         commandEncoder.setComputePipelineState(self.pipelineState!)
         commandEncoder.setTexture(texture, at: 0)
-        let bufferLength = MemoryLayout<Int>.size * 3 * 9
+        let bufferCount = 3 * 9
+        let bufferLength = MemoryLayout<UInt32>.size * bufferCount
         let resultBuffer = self.device.makeBuffer(length: bufferLength)
         commandEncoder.setBuffer(resultBuffer, offset: 0, at: 0)
+        let gridSize : MTLSize = MTLSize(width: 9, height: 1, depth: 1)
+        let threadGroupSize : MTLSize = MTLSize(width: 512, height: 1, depth: 1)
+        commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
         commandEncoder.endEncoding()
         commandBuffer.addCompletedHandler({(buffer) -> Void in
-            let results : [Int] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: Int.self), count: bufferLength))
+            let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: bufferCount))
             complete(results)
         })
-        print("committing")
         commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
     }
 }
 
@@ -185,10 +188,14 @@ class TenPointAveraging: LibraryPreprocessing {
             if (asset.mediaType == .image) {
                 //Asynchronously grab image and save the values.
                 i += 1
-                if (i > 4) {
+                if (i > 30) {
                     stop.pointee = true
+                    self.inProgress = false
+                    complete()
                 }
-                TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: PHImageRequestOptions(),
+                let options = PHImageRequestOptions()
+                options.isSynchronous = true
+                TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: options,
                                                resultHandler: {(result, info) -> Void in
                                                 if (result != nil) {
                                                     let image = result!
@@ -230,7 +237,7 @@ class TenPointAveraging: LibraryPreprocessing {
         } catch {
             print("Error getting image texture!")
         }
-        TenPointAveraging.metal?.processImageTexture(texture: texture!, complete: {(result : [Int]) -> Void in
+        TenPointAveraging.metal?.processImageTexture(texture: texture!, complete: {(result : [UInt32]) -> Void in
             print("Done getting averages!")
             print(result)
             let tba = TenPointAverage()
@@ -240,7 +247,7 @@ class TenPointAveraging: LibraryPreprocessing {
                     tba.totalAvg.r += CGFloat(result[index])/9
                     tba.totalAvg.g += CGFloat(result[index+1])/9
                     tba.totalAvg.b += CGFloat(result[index+2])/9
-                    tba.gridAvg[i][j] = RGBFloat(result[index], result[index+1], result[index+2])
+                    tba.gridAvg[i][j] = RGBFloat(Int(result[index]), Int(result[index+1]), Int(result[index+2]))
                 }
             }
             do {
