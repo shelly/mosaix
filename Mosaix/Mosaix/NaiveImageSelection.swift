@@ -45,7 +45,7 @@ class NaiveImageSelection: ImageSelection {
         }
     }
     
-    private func comparePoints(refPoint: CGPoint, otherImage: UIImage, otherPoint: CGPoint) -> CGFloat {
+    private func comparePoints(refPoint: CGPoint, otherImage: UIImage, otherPoint: CGPoint) -> Float {
         
         let otherPixelData = otherImage.cgImage!.dataProvider!.data
         
@@ -58,17 +58,17 @@ class NaiveImageSelection: ImageSelection {
         let redDiff = Int(refData[refPixelIndex]) - Int(othData[othPixelIndex])
         let greenDiff = Int(refData[refPixelIndex+1]) - Int(othData[othPixelIndex+1])
         let blueDiff = Int(refData[refPixelIndex+2]) - Int(othData[othPixelIndex+2])
-        return CGFloat(abs(redDiff) + abs(greenDiff) + abs(blueDiff)) / CGFloat(255.0)
+        return Float(abs(redDiff) + abs(greenDiff) + abs(blueDiff)) / Float(255.0)
     }
     
-    private func compareRegions(refRegion: CGRect, otherImage: UIImage, otherRegion: CGRect) throws -> CGFloat {
+    private func compareRegions(refRegion: CGRect, otherImage: UIImage, otherRegion: CGRect) throws -> Float {
         guard (refRegion.width == otherRegion.width && refRegion.height == otherRegion.height) else {
             throw NaiveSelectionError.RegionMismatch
         }
         guard (self.skipSize >= 0) else {
             throw NaiveSelectionError.InvalidSkipSize
         }
-        var fit : CGFloat = 0.0
+        var fit : Float = 0.0
         for deltaY in stride(from: 0, to: Int(refRegion.height) - 1, by: 1 + self.skipSize) {
             for deltaX in stride(from: 0, to: Int(refRegion.width) - 1, by: 1 + self.skipSize) {
                 let refPoint = CGPoint(x:Int(refRegion.minX) + deltaX,y:Int(refRegion.minY) + deltaY)
@@ -92,7 +92,7 @@ class NaiveImageSelection: ImageSelection {
                                                 if (result != nil) {
                                                     do {
                                                         let choiceRegion = CGRect(x: 0.0, y: 0.0, width: refRegion.width, height: refRegion.height)
-                                                        let fit : CGFloat = try self.compareRegions(refRegion: refRegion, otherImage: result!, otherRegion: choiceRegion)
+                                                        let fit : Float = try self.compareRegions(refRegion: refRegion, otherImage: result!, otherRegion: choiceRegion)
                                                         if (bestMatch == nil || fit < bestMatch!.fit) {
                                                             bestMatch = ImageChoice(position: (row, col), image: result!, region: choiceRegion, fit: fit)
                                                         }

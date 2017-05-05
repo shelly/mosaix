@@ -8,9 +8,11 @@
 
 import Foundation
 import Photos
+import MetalKit
+import Metal
 
 
-class RGBFloat {
+class RGBFloat : CustomStringConvertible {
     var r : CGFloat
     var g: CGFloat
     var b: CGFloat
@@ -21,11 +23,20 @@ class RGBFloat {
         self.b = blue
     }
     
+    init(_ red : Int, _ green : Int, _ blue : Int) {
+        self.r = CGFloat(red)
+        self.g = CGFloat(green)
+        self.b = CGFloat(blue)
+    }
+    
     static func -(left: RGBFloat, right: RGBFloat) -> CGFloat {
         return abs(left.r-right.r) + abs(left.g-right.g) + abs(left.b-right.b)
     }
+    
+    var description : String {
+        return "(\(self.r), \(self.g), \(self.b))"
+    }
 }
-
 
 struct TenPointAverageConstants {
     static let rows = 3
@@ -48,26 +59,111 @@ class TenPointAverage {
     }
 }
 
+class MetalPipeline {
+    let device : MTLDevice
+    let commandQueue : MTLCommandQueue
+    let library: MTLLibrary
+    let NinePointAverage : MTLFunction
+    var pipelineState : MTLComputePipelineState? = nil
+    
+    init() {
+        self.device = MTLCreateSystemDefaultDevice()!
+        self.commandQueue = self.device.makeCommandQueue()
+        self.library = self.device.newDefaultLibrary()!
+        self.NinePointAverage = self.library.makeFunction(name: "findNinePointAverage")!
+        do {
+            self.pipelineState = try self.device.makeComputePipelineState(function: self.NinePointAverage)
+        } catch {
+            print("Error initializing pipeline state!")
+        }
+    }
+    
+    func getImageTexture(image: CGImage) throws -> MTLTexture {
+        let textureLoader = MTKTextureLoader(device: self.device)
+        return try textureLoader.newTexture(with: image)
+    }
+    
+    private func getImageTextureRaw(image: CGImage) -> MTLTexture {
+        let rawData = calloc(image.height * image.width * 4, MemoryLayout<UInt8>.size)
+        let bytesPerRow = 4 * image.width
+        let options = CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+        let context = CGContext(
+            data: rawData,
+            width: image.width,
+            height: image.height,
+            bitsPerComponent: image.bitsPerComponent,
+            bytesPerRow: bytesPerRow,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: options
+        )
 
-class TenPointAveraging: LibraryPreprocessing {
+        context?.draw(image, in : CGRect(x:0, y: 0, width: image.width, height: image.height))
+        let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: .rgba8Unorm,
+            width: image.width,
+            height: image.height,
+            mipmapped: true
+        )
+
+        let texture : MTLTexture = self.device.makeTexture(descriptor: textureDescriptor)
+        texture.replace(region: MTLRegionMake2D(0, 0, image.width, image.height),
+                        mipmapLevel: 0,
+                        slice: 0,
+                        withBytes: rawData!,
+                        bytesPerRow: bytesPerRow,
+                        bytesPerImage: bytesPerRow * image.height)
+        free(rawData)
+        return texture
+    }
+    
+    func processImageTexture(texture: MTLTexture, complete : @escaping ([UInt32]) -> Void) {
+        let commandBuffer = self.commandQueue.makeCommandBuffer()
+        let commandEncoder = commandBuffer.makeComputeCommandEncoder()
+        commandEncoder.setComputePipelineState(self.pipelineState!)
+        commandEncoder.setTexture(texture, at: 0)
+        let bufferCount = 3 * 9
+        let bufferLength = MemoryLayout<UInt32>.size * bufferCount
+        let resultBuffer = self.device.makeBuffer(length: bufferLength)
+        commandEncoder.setBuffer(resultBuffer, offset: 0, at: 0)
+        let gridSize : MTLSize = MTLSize(width: 9, height: 1, depth: 1)
+        let threadGroupSize : MTLSize = MTLSize(width: 512, height: 1, depth: 1)
+        commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
+        commandEncoder.endEncoding()
+        commandBuffer.addCompletedHandler({(buffer) -> Void in
+            let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: bufferCount))
+            complete(results)
+        })
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+    }
+}
+
+class TenPointAveraging: PhotoProcessor {
+
     
     private var inProgress : Bool
-    var averages : [PHAsset : TenPointAverage]
-    private let imageManager : PHImageManager
+    private var storage : TPAStorage
+    private static var imageManager : PHImageManager?
     private var totalPhotos : Int
     private var photosComplete : Int
+    private static var metal : MetalPipeline? = nil
     
     init() {
         self.inProgress = false
-        self.averages = [:] // empty dictionary
-        self.imageManager = PHImageManager()
+        self.storage = TPADictionary()
         self.totalPhotos = 0
         self.photosComplete = 0
+        if (TenPointAveraging.imageManager == nil) {
+            TenPointAveraging.imageManager = PHImageManager()
+        }
+        if (TenPointAveraging.metal == nil) {
+            TenPointAveraging.metal = MetalPipeline()
+        }
     }
     
-    func begin(complete: @escaping () -> Void) throws -> Void {
+    func preprocess(complete: @escaping () -> Void) throws -> Void {
         guard (self.inProgress == false) else {
-            throw LibraryPreprocessingError.PreprocessingInProgress
+            throw LibraryProcessingError.PreprocessingInProgress
         }
         self.inProgress = true
         PHPhotoLibrary.requestAuthorization { (status) in
@@ -83,62 +179,100 @@ class TenPointAveraging: LibraryPreprocessing {
         }
     }
     
+    private func loadFromFile() {
+//        let manager = NSFileManager.defaultManager()
+//        let dirURL = manager.URLForDirectory(.DocumentDirectory, inDomain: .UserDomainmask, appropriateForURL: nil, create: false, error: nil))
+    }
+    
+    func findNearestMatch(tpa: TenPointAverage) -> (PHAsset, Float)? {
+        return self.storage.findNearestMatch(to: tpa)
+    }
+    
  
     private func processAllPhotos(fetchResult: PHFetchResult<PHAsset>, complete: @escaping () -> Void) {
         self.totalPhotos = fetchResult.count
         self.photosComplete = 0
+        var i : Int = 0
         fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             if (asset.mediaType == .image) {
                 //Asynchronously grab image and save the values.
-                self.imageManager.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: PHImageRequestOptions(),
-                                               resultHandler: {(result, info) -> Void in
-                                                if (result != nil) {
-                                                    let image = result!
-                                                    self.processPhoto(image: image.cgImage!, width: Int(image.size.width), height: Int(image.size.height), complete: {(tpa) -> Void in
-                                                        self.averages[asset] = tpa
-                                                        self.photosComplete += 1
-                                                        if (self.photosComplete == self.totalPhotos) {
+                let options = PHImageRequestOptions()
+                options.isSynchronous = true
+                let _ = autoreleasepool {
+                    TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: options,
+                                                   resultHandler: {(result, info) -> Void in
+                                                    if (result != nil && !self.storage.isMember(asset)) {
+                                                        i += 1
+                                                        if (i > 300) {
+                                                            stop.pointee = true
                                                             complete()
                                                         }
-                                                    })
-                                                }
-                })
+                                                        self.processPhoto(image: result!.cgImage!, complete: {(tpa) -> Void in
+                                                            if (tpa != nil) {
+                                                                self.storage.insert(asset: asset, tpa: tpa!)
+                                                            }
+                                                            self.photosComplete += 1
+                                                            if (self.photosComplete == self.totalPhotos) {
+                                                                self.inProgress = false
+                                                                complete()
+                                                            } else if (self.photosComplete % 20 == 0) {
+                                                                print("\(self.photosComplete)/\(self.totalPhotos)")
+                                                            }
+                                                        })
+                                                    } else {
+                                                        self.photosComplete += 1
+                                                        if (self.photosComplete == self.totalPhotos) {
+                                                            self.inProgress = false
+                                                            complete()
+                                                        }
+                                                    }
+                    })
+                }
             }
         })
     }
     
-    private func getAvgOverRegion(image: CIImage, region: CGRect) -> RGBFloat {
-        let avgRegion = CIVector(cgRect: region)
-        let avgFilter = CIFilter(name: "CIAreaAverage", withInputParameters: [
-            kCIInputImageKey: image,
-            kCIInputExtentKey: avgRegion
-        ])
-        let ctx = CIContext(options: nil)
-        let cgImage = ctx.createCGImage(avgFilter!.outputImage!, from:avgFilter!.outputImage!.extent)!
-        let data : UnsafePointer<UInt8> = CFDataGetBytePtr(cgImage.dataProvider!.data)
-        let overallRGB = RGBFloat(CGFloat(data[0]), CGFloat(data[1]), CGFloat(data[2]))
-        return overallRGB
-    }
-    
-    func processPhoto(image: CGImage, width: Int, height: Int, complete: (TenPointAverage) -> Void) {
+    func processPhoto(image: CGImage, complete: @escaping (TenPointAverage?) throws -> Void) -> Void {
         //Computes the average
-        print("processing photo.")
-        let ciImage = CIImage(cgImage: image)
-        let tpa = TenPointAverage()
-        let colWidth = width / TenPointAverageConstants.cols
-        let colHeight = height / TenPointAverageConstants.rows
-        for col in 0..<TenPointAverageConstants.cols {
-            for row in 0..<TenPointAverageConstants.rows {
-                tpa.gridAvg[row][col] = self.getAvgOverRegion(image: ciImage, region: CGRect(x: col * colWidth, y: row * colHeight, width: colWidth, height: colHeight))
+        var texture : MTLTexture? = nil
+        do {
+            texture = try TenPointAveraging.metal?.getImageTexture(image: image)
+        } catch {
+            print("Error getting image texture!")
+            do {
+                try complete(nil)
+            } catch {
+                print("error in callback for null TPA")
             }
         }
-        tpa.totalAvg = self.getAvgOverRegion(image: ciImage, region: CGRect(x: 0, y: 0, width: width, height: height))
-        complete(tpa)
+        if (texture != nil) {
+            TenPointAveraging.metal?.processImageTexture(texture: texture!, complete: {(result : [UInt32]) -> Void in
+                let tba = TenPointAverage()
+                for i in 0..<3 {
+                    for j in 0..<3 {
+                        let index = 3 * i + j
+                        tba.totalAvg.r += CGFloat(result[index])/9
+                        tba.totalAvg.g += CGFloat(result[index+1])/9
+                        tba.totalAvg.b += CGFloat(result[index+2])/9
+                        tba.gridAvg[i][j] = RGBFloat(Int(result[index]), Int(result[index+1]), Int(result[index+2]))
+                    }
+                }
+                do {
+                    try complete(tba)
+                } catch {
+                    print("Error in completion callback for processing photo.")
+                }
+            })
+        }
+    }
+    
+    func preprocessProgress() -> Int {
+        if (!self.inProgress) {return 0}
+        return Int(100.0 * Float(self.photosComplete) / Float(self.totalPhotos))
     }
     
     func progress() -> Int {
-        if (!self.inProgress) {return 0}
-        return Int(100.0 * Float(self.photosComplete) / Float(self.totalPhotos))
+        return 0 //TODO 
     }
     
 }

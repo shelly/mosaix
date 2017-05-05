@@ -13,15 +13,20 @@ class CompositePhotoViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        print("beginning mosaic")
+        self.compositePhoto.image = self.mosaicCreator.compositeImage
         
-        DispatchQueue.global().async{
-            do {
-                try self.mosaicCreator.begin()
+        do {
+            try self.mosaicCreator.begin(tick: {() -> Void in
+//                print("tick!")
                 self.compositePhoto.image = self.mosaicCreator.compositeImage
-            }
-            catch {
-                print("Error with dispatching mosaicCreator.begin.")
-            }
+            }, complete: {() -> Void in
+                // This will be called when the mosaic is complete.
+                print("Mosaic complete!")
+                self.compositePhoto.image = self.mosaicCreator.compositeImage
+            })
+        } catch {
+            print("oh shit")
         }
     }
     

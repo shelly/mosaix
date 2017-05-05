@@ -9,6 +9,7 @@
 import Foundation
 import UIKit
 import Photos
+import GameplayKit
 
 struct MetalSelectionConstants {
     //    static let skipSize = 5 //Number of pixels to skip over when checking
@@ -37,21 +38,15 @@ class MetalImageSelection: ImageSelection {
     }
     
     private func findBestMatch(row: Int, col: Int, refRegion: CGRect, onSelect : @escaping (ImageChoice) -> Void) {
-        print("(\(row), \(col)) finding best match.")
         let croppedImage : CGImage = self.refCGImage.cropping(to: refRegion)!
-        self.tpa.processPhoto(image: croppedImage, width: Int(refRegion.width), height: Int(refRegion.height), complete: {(refTPA) -> Void in
-            var bestFit : PHAsset? = nil
-            var bestDiff : CGFloat = 0.0
-            for (asset, assetTPA) in self.tpa.averages {
-                let diff = assetTPA - refTPA
-                if (bestFit == nil || diff < bestDiff) {
-                    bestFit = asset
-                    bestDiff = diff
-                }
-            }
+        
+        self.tpa.processPhoto(image: croppedImage, complete: {(refTPA) -> Void in
+            
+            let (bestFit, bestDiff) = self.tpa.findNearestMatch(tpa: refTPA!)!
+            
             let targetSize = CGSize(width: refRegion.width, height: refRegion.height)
             let options = PHImageRequestOptions()
-            self.imageManager.requestImage(for: bestFit!, targetSize: targetSize, contentMode: PHImageContentMode.default, options: options,
+            self.imageManager.requestImage(for: bestFit, targetSize: targetSize, contentMode: PHImageContentMode.default, options: options,
                                            resultHandler: {(result, info) -> Void in
                                             let choiceRegion = CGRect(x: 0, y: 0, width: Int(refRegion.width), height: Int(refRegion.height))
                                             let choice = ImageChoice(position: (row:row,col:col), image: result!, region: choiceRegion, fit: bestDiff)
@@ -63,16 +58,27 @@ class MetalImageSelection: ImageSelection {
     func select(gridSizePoints: Int, quality: Int, onSelect: @escaping (ImageChoice) -> Void) throws -> Void {
         //Pre-process library
         print("Pre-processing library...")
-        try self.tpa.begin(complete: {() -> Void in
+        try self.tpa.preprocess(complete: {() -> Void in
             print("Done pre-processing.")
             print("Finding best matches...")
             
             let numRows : Int = Int(self.referenceImage.size.height) / gridSizePoints
             let numCols : Int = Int(self.referenceImage.size.width) / gridSizePoints
             
-            for row in 0 ... numRows-1 {
-                for col in 0 ... numCols-1 {
-                    self.findBestMatch(row: row, col: col, refRegion: CGRect(x: col * gridSizePoints, y: row * gridSizePoints, width: gridSizePoints, height: gridSizePoints), onSelect: onSelect)
+            let rows : [Int] = GKRandomSource.sharedRandom().arrayByShufflingObjects(in: Array(0 ..< numRows)) as! [Int]
+            let cols : [Int] = GKRandomSource.sharedRandom().arrayByShufflingObjects(in: Array(0 ..< numCols)) as! [Int]
+            
+            for row in rows {
+                DispatchQueue.global(qos: .background).async {
+                    for col in cols {
+                        self.findBestMatch(row: row, col: col, refRegion: CGRect(x: col * gridSizePoints, y: row * gridSizePoints, width: gridSizePoints,
+                                                                                 height: gridSizePoints), onSelect: {(choice: ImageChoice) -> Void in
+                                                                                    DispatchQueue.main.async {
+                                                                                        onSelect(choice)
+                                                                                    }
+                            
+                        })
+                    }
                 }
             }
             
