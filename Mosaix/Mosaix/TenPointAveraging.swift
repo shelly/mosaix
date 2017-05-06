@@ -232,9 +232,11 @@ class TenPointAveraging: PhotoProcessor {
                     userAlbumsOptions.predicate = NSPredicate(format: "estimatedAssetCount > 0")
                     let userAlbums = PHAssetCollection.fetchAssetCollections(with: PHAssetCollectionType.album, subtype: PHAssetCollectionSubtype.albumSyncedAlbum, options: userAlbumsOptions)
 
-                    self.processAllPhotos(userAlbums: userAlbums, complete: {() -> Void in
+                    self.processAllPhotos(userAlbums: userAlbums, complete: {(changed: Bool) -> Void in
                         //Save to file
-                        self.saveStorageToFile()
+                        if (changed) {
+                            self.saveStorageToFile()
+                        }
                         DispatchQueue.main.async {
                             complete()
                         }
@@ -253,59 +255,52 @@ class TenPointAveraging: PhotoProcessor {
     }
     
 
-    private func processAllPhotos(userAlbums: PHFetchResult<PHAssetCollection>, complete: @escaping () -> Void) {
-        
+    private func processAllPhotos(userAlbums: PHFetchResult<PHAssetCollection>, complete: @escaping (_ changed: Bool) -> Void) {
+        var changed: Bool = false
         userAlbums.enumerateObjects({(collection: PHAssetCollection, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
-            if collection.estimatedAssetCount > 1000 {
-                stop.pointee = true
-                let options = PHFetchOptions()
-                options.fetchLimit = 3000
-                let fetchResult = PHAsset.fetchAssets(in: collection, options: options)
-                self.totalPhotos = fetchResult.count
-                self.photosComplete = 0
-                var i : Int = 0
-                fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
-
-                i += 1
-                if (i > 1200) {
-                    stop.pointee = true
+            stop.pointee = true
+            let options = PHFetchOptions()
+            options.fetchLimit = 6001
+            let fetchResult = PHAsset.fetchAssets(in: collection, options: options)
+            self.totalPhotos = fetchResult.count
+            self.photosComplete = 0
+            
+            func step() {
+                self.photosComplete += 1
+                if (self.photosComplete == self.totalPhotos) {
                     self.inProgress = false
-                    complete()
+                    complete(changed)
+                } else if (self.photosComplete % 20 == 0) {
+                    print("\(self.photosComplete)/\(self.totalPhotos)")
                 }
-                    if (asset.mediaType == .image && !self.storage.isMember(asset.localIdentifier)) {
-
-                        //Asynchronously grab image and save the values.
-                        let options = PHImageRequestOptions()
-                        options.isSynchronous = true
-                        let _ = autoreleasepool {
-                            TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: options,
-                                     resultHandler: {(result, info) -> Void in
-                                        if (result != nil) {
-                                            self.processPhoto(image: result!.cgImage!, complete: {(tpa) -> Void in
-                                                if (tpa != nil) {
-                                                    self.storage.insert(asset: asset.localIdentifier, tpa: tpa!)
-                                                }
-                                                self.photosComplete += 1
-                                                if (self.photosComplete == self.totalPhotos) {
-                                                    self.inProgress = false
-                                                    complete()
-                                                } else if (self.photosComplete % 20 == 0) {
-                                                    print("\(self.photosComplete)/\(self.totalPhotos)")
-                                                }
-                                            })
-                                        } else {
-                                            self.photosComplete += 1
-                                            if (self.photosComplete == self.totalPhotos) {
-                                                self.inProgress = false
-                                                complete()
-                                            }
-                                        }
-
-                            })
-                        }
-                    }
-                })
             }
+            
+            fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
+                if (asset.mediaType == .image && !self.storage.isMember(asset.localIdentifier)) {
+
+                    //Asynchronously grab image and save the values.
+                    changed = true
+                    let options = PHImageRequestOptions()
+                    options.isSynchronous = true
+                    let _ = autoreleasepool {
+                        TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: options,
+                                 resultHandler: {(result, info) -> Void in
+                                    if (result != nil) {
+                                        self.processPhoto(image: result!.cgImage!, complete: {(tpa) -> Void in
+                                            if (tpa != nil) {
+                                                self.storage.insert(asset: asset.localIdentifier, tpa: tpa!)
+                                            }
+                                            step()
+                                        })
+                                    } else {
+                                        step()
+                                    }
+                        })
+                    }
+                } else {
+                    step()
+                }
+            })
         })
     }
     
