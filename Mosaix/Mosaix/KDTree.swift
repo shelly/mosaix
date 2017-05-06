@@ -11,6 +11,9 @@ import Photos
 
 
 class KDTree : TPAStorage {
+
+    public var pListPath = "kdtree.plist"
+    
     required init() {
         
     }
@@ -27,11 +30,13 @@ class KDTree : TPAStorage {
         return nil
     }
     
-    func toString() -> String {
-        return ""
+    //NSCoding
+    
+    required init?(coder aDecoder: NSCoder) {
+        
     }
     
-    static func fromString(storageString: String) -> TPAStorage? {
-        return nil
+    func encode(with aCoder: NSCoder) -> Void{
+        
     }
 }

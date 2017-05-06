@@ -11,6 +11,8 @@ import Photos
 
 class TPADictionary : TPAStorage {
     
+    public var pListPath = "dictionary.plist"
+
     private var averages : [PHAsset : TenPointAverage]
     
     required init() {
@@ -42,11 +44,15 @@ class TPADictionary : TPAStorage {
         }
     }
     
-    func toString() -> String {
-        return ""
+    //NSCoding
+    
+    required init?(coder aDecoder: NSCoder) {
+        self.averages = aDecoder.decodeObject(forKey: "averages") as! [PHAsset : TenPointAverage]
     }
     
-    static func fromString(storageString: String) -> TPAStorage? {
-        return nil
+    
+    func encode(with aCoder: NSCoder) -> Void{
+        aCoder.encode(averages, forKey: "averages")
     }
+    
 }

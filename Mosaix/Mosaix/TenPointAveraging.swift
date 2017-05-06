@@ -12,7 +12,8 @@ import MetalKit
 import Metal
 
 
-class RGBFloat : CustomStringConvertible {
+class RGBFloat : CustomStringConvertible, NSCoding {
+
     var r : CGFloat
     var g: CGFloat
     var b: CGFloat
@@ -36,6 +37,22 @@ class RGBFloat : CustomStringConvertible {
     var description : String {
         return "(\(self.r), \(self.g), \(self.b))"
     }
+    
+    //For NSCoding
+    
+    func encode(with aCoder: NSCoder) -> Void {
+        aCoder.encode(r, forKey: "r")
+        aCoder.encode(g, forKey: "g")
+        aCoder.encode(b, forKey: "b")
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        self.r = aDecoder.decodeObject(forKey: "r") as! CGFloat
+        self.g = aDecoder.decodeObject(forKey: "g") as! CGFloat
+        self.b = aDecoder.decodeObject(forKey: "b") as! CGFloat
+    }
+    
+    
 }
 
 struct TenPointAverageConstants {
@@ -43,9 +60,13 @@ struct TenPointAverageConstants {
     static let cols = 3
 }
 
-class TenPointAverage {
+class TenPointAverage : NSCoding {
     var totalAvg : RGBFloat = RGBFloat(0,0,0)
     var gridAvg : [[RGBFloat]] = Array(repeating: Array(repeating: RGBFloat(0,0,0), count: 3), count: 3)
+    
+    init () {
+        //Setup if necessary
+    }
     
     static func -(left: TenPointAverage, right: TenPointAverage) -> CGFloat {
         var diff : CGFloat = 0.0
@@ -56,6 +77,18 @@ class TenPointAverage {
             }
         }
         return diff
+    }
+    
+    //For NSCoding
+    
+    func encode(with aCoder: NSCoder) -> Void {
+        aCoder.encode(totalAvg, forKey: "totalAvg")
+        aCoder.encode(gridAvg, forKey: "gridAvg")
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        self.totalAvg = aDecoder.decodeObject(forKey: "totalAvg") as! RGBFloat
+        self.gridAvg = aDecoder.decodeObject(forKey: "gridAvg") as! [[RGBFloat]]
     }
 }
 
@@ -159,6 +192,7 @@ class TenPointAveraging: PhotoProcessor {
         if (TenPointAveraging.metal == nil) {
             TenPointAveraging.metal = MetalPipeline()
         }
+        self.loadStorageFromFile()
     }
     
     func preprocess(complete: @escaping () -> Void) throws -> Void {
@@ -171,7 +205,7 @@ class TenPointAveraging: PhotoProcessor {
             case .authorized:
                 let fetchOptions = PHFetchOptions()
                 self.processAllPhotos(fetchResult: PHAsset.fetchAssets(with: fetchOptions), complete: {() -> Void in
-                    //Save to file
+                    self.saveStorageToFile()
                     complete()
                 })
             case .denied, .restricted:
@@ -180,11 +214,6 @@ class TenPointAveraging: PhotoProcessor {
                 print("Library Access Not Determined!")
             }
         }
-    }
-    
-    private func loadFromFile() {
-//        let manager = NSFileManager.defaultManager()
-//        let dirURL = manager.URLForDirectory(.DocumentDirectory, inDomain: .UserDomainmask, appropriateForURL: nil, create: false, error: nil))
     }
     
     func findNearestMatch(tpa: TenPointAverage) -> (PHAsset, Float)? {
@@ -276,6 +305,38 @@ class TenPointAveraging: PhotoProcessor {
     
     func progress() -> Int {
         return 0 //TODO 
+    }
+    
+    //File Management
+    
+    private func loadStorageFromFile() -> Void {
+
+        let fileURL = try! FileManager.default
+            .url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+            .appendingPathComponent(self.storage.pListPath)
+        
+        if let stored = NSKeyedUnarchiver.unarchiveObject(withFile: fileURL.path) as? TPAStorage {
+            
+            self.storage = stored
+            print("self.storage successfully loaded from file.\n")
+            
+        }
+    }
+    
+    private func saveStorageToFile() -> Void {
+        
+        let toStore = NSKeyedArchiver.archivedData(withRootObject: self.storage)
+        
+        let fileURL = try! FileManager.default
+            .url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+            .appendingPathComponent(self.storage.pListPath)
+        
+        do {
+            try toStore.write(to: fileURL)
+        } catch {
+            print("Could not store self.storage to file.\n")
+        }
+        
     }
     
 }
