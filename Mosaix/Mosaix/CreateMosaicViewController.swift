@@ -14,12 +14,22 @@ class CreateMosaicViewController: UIViewController {
     var mosaicCreator: MosaicCreator!
     @IBOutlet weak var qualitySlider: UISlider! = UISlider()
     @IBOutlet weak var sizeSlider: UISlider! = UISlider()
+    @IBOutlet weak var goButton: UIButton! = UIButton()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         imageView.image = image
+        goButton.isHidden = true
         // Do any additional setup after loading the view.
         mosaicCreator = MosaicCreator(reference: image)
+        
+        do {
+            try mosaicCreator.preprocess(complete: {
+                self.goButton.isHidden = false
+            })
+        } catch {
+            print("Call to preprocess caused an error.")
+        }
         
         qualitySlider.minimumValue = Float(MosaicCreationConstants.qualityMin)
         qualitySlider.maximumValue = Float(MosaicCreationConstants.qualityMax)
