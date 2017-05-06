@@ -9,14 +9,15 @@
 import Foundation
 import Photos
 
-class TPADictionary : TPAStorage {
+class TPADictionary : NSObject, TPAStorage {
     
     public var pListPath = "dictionary.plist"
 
     private var averages : [PHAsset : TenPointAverage]
     
-    required init() {
+    required override init() {
         self.averages = [:]
+        super.init()
     }
     
     func insert(asset: PHAsset, tpa: TenPointAverage) {

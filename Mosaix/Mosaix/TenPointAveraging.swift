@@ -12,29 +12,24 @@ import MetalKit
 import Metal
 
 
-class RGBFloat : NSCoding {
+class RGBFloat : NSObject, NSCoding {
 
     var r : CGFloat
     var g: CGFloat
     var b: CGFloat
     
     init(_ red : CGFloat, _ green : CGFloat, _ blue : CGFloat) {
+        
         self.r = red
         self.g = green
         self.b = blue
-    }
-    
-    init(_ red : Int, _ green : Int, _ blue : Int) {
-        self.r = CGFloat(red)
-        self.g = CGFloat(green)
-        self.b = CGFloat(blue)
     }
     
     static func -(left: RGBFloat, right: RGBFloat) -> CGFloat {
         return abs(left.r-right.r) + abs(left.g-right.g) + abs(left.b-right.b)
     }
     
-    var description : String {
+    override var description : String {
         return "(\(self.r), \(self.g), \(self.b))"
     }
     
@@ -64,7 +59,8 @@ class TenPointAverage : NSObject, NSCoding {
     var totalAvg : RGBFloat = RGBFloat(0,0,0)
     var gridAvg : [[RGBFloat]] = Array(repeating: Array(repeating: RGBFloat(0,0,0), count: 3), count: 3)
     
-    init () {
+    override init () {
+        super.init()
         //Setup if necessary
     }
     
@@ -286,7 +282,7 @@ class TenPointAveraging: PhotoProcessor {
                         tba.totalAvg.r += CGFloat(result[index])/9
                         tba.totalAvg.g += CGFloat(result[index+1])/9
                         tba.totalAvg.b += CGFloat(result[index+2])/9
-                        tba.gridAvg[i][j] = RGBFloat(Int(result[index]), Int(result[index+1]), Int(result[index+2]))
+                        tba.gridAvg[i][j] = RGBFloat(CGFloat(Int(result[index])), Int(result[index+1]), Int(result[index+2]))
                     }
                 }
                 do {

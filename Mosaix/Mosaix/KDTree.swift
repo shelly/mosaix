@@ -10,11 +10,12 @@ import Foundation
 import Photos
 
 
-class KDTree : TPAStorage {
+class KDTree : NSObject, TPAStorage {
 
     public var pListPath = "kdtree.plist"
     
     required override init() {
+        super.init()
         
     }
     
