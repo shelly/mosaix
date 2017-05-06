@@ -63,11 +63,10 @@ class TenPointAverage {
     
     static func -(left: TenPointAverage, right: TenPointAverage) -> CGFloat {
         var diff : CGFloat = 0.0
-        diff += (left.totalAvg - right.totalAvg)*(left.totalAvg - right.totalAvg)
+        diff += abs(left.totalAvg - right.totalAvg)
         for row in 0..<TenPointAverageConstants.rows {
             for col in 0..<TenPointAverageConstants.cols {
-                
-                diff += (left.gridAvg[row][col] - right.gridAvg[row][col]) * (left.gridAvg[row][col] - right.gridAvg[row][col])
+                diff += abs(left.gridAvg[row][col] - right.gridAvg[row][col])
             }
         }
         return diff

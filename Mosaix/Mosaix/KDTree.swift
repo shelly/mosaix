@@ -126,6 +126,29 @@ class KDTree : TPAStorage {
             return nil
         }
         
+        // Brute Force
+//        let leftBest = self.findNearestMatch(to: refTPA, from: node!.left, level: level + 1)
+//        let rightBest = self.findNearestMatch(to: refTPA, from: node!.right, level: level + 1)
+//        let currentDiff : Float = Float(refTPA - node!.tpa)
+//        
+//        let leftBetter = leftBest != nil && leftBest!.diff < currentDiff
+//        let rightBetter = rightBest != nil && rightBest!.diff < currentDiff
+//        
+//        if (leftBetter && rightBetter) {
+//            if (leftBest!.diff < rightBest!.diff) {
+//                return leftBest
+//            } else {
+//                return rightBest
+//            }
+//        } else if (leftBetter) {
+//            return leftBest
+//        } else if (rightBetter) {
+//            return rightBest
+//        } else {
+//            return (node!.asset, currentDiff)
+//        }
+        
+// IN-PROGRESS
         //Recursively get best from leaves
         let comparison = self.compareAtLevel(refTPA, node!.tpa, atLevel: level)
         if (comparison == TPAComparison.less) {
@@ -136,7 +159,7 @@ class KDTree : TPAStorage {
         
         //Then, on the way back up, see if current node is better.
         let currentDiff : Float = Float(refTPA - node!.tpa)
-        if (currentBest == nil || currentDiff > currentBest!.diff) {
+        if (currentBest == nil || currentDiff < currentBest!.diff) {
             // Node is better than currentBest
             currentBest = (closest: node!.asset, diff: currentDiff)
         }
@@ -153,6 +176,35 @@ class KDTree : TPAStorage {
         }
         
         return currentBest
+        
+// OG NOT WORKING BUT ORIGINAL IMPLEMENTATION
+//        //Recursively get best from leaves
+//        let comparison = self.compareAtLevel(refTPA, node!.tpa, atLevel: level)
+//        if (comparison == TPAComparison.less) {
+//            currentBest = self.findNearestMatch(to: refTPA, from: node!.left, level: level + 1)
+//        } else {
+//            currentBest = self.findNearestMatch(to: refTPA, from: node!.right, level: level + 1)
+//        }
+//        
+//        //Then, on the way back up, see if current node is better.
+//        let currentDiff : Float = Float(refTPA - node!.tpa)
+//        if (currentBest == nil || currentDiff > currentBest!.diff) {
+//            // Node is better than currentBest
+//            currentBest = (closest: node!.asset, diff: currentDiff)
+//        }
+//        
+//        //Now, check to see if the _other_ branch potentially has a closer node.
+//        var otherBest : (closest: PHAsset, diff: Float)? = nil
+//        if (comparison == TPAComparison.less && (currentBest == nil || self.isCloser(refTPA, to: node!.right, than: currentBest!.diff, atLevel: level + 1))) {
+//            otherBest = self.findNearestMatch(to: refTPA, from: node!.right, level: level + 1)
+//        } else if (comparison == TPAComparison.greater && (currentBest == nil || self.isCloser(refTPA, to: node!.left, than: currentBest!.diff, atLevel: level + 1))) {
+//            otherBest = self.findNearestMatch(to: refTPA, from: node!.left, level: level + 1)
+//        }
+//        if (otherBest != nil && (currentBest == nil || otherBest!.diff < currentBest!.diff)) {
+//            currentBest = otherBest
+//        }
+//        
+//        return currentBest
     }
     
     /**

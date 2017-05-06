@@ -38,21 +38,25 @@ class MetalImageSelection: ImageSelection {
     }
     
     private func findBestMatch(row: Int, col: Int, refRegion: CGRect, onSelect : @escaping (ImageChoice) -> Void) {
-        let croppedImage : CGImage = self.refCGImage.cropping(to: refRegion)!
+        let croppedImage : CGImage? = self.refCGImage.cropping(to: refRegion)
         
-        self.tpa.processPhoto(image: croppedImage, complete: {(refTPA) -> Void in
-//            print("(\(row), \(col)) -> \(refTPA!.gridAvg)")
-            let (bestFit, bestDiff) = self.tpa.findNearestMatch(tpa: refTPA!)!
-            
-            let targetSize = CGSize(width: refRegion.width, height: refRegion.height)
-            let options = PHImageRequestOptions()
-            self.imageManager.requestImage(for: bestFit, targetSize: targetSize, contentMode: PHImageContentMode.default, options: options,
-                                           resultHandler: {(result, info) -> Void in
-                                            let choiceRegion = CGRect(x: 0, y: 0, width: Int(refRegion.width), height: Int(refRegion.height))
-                                            let choice = ImageChoice(position: (row:row,col:col), image: result!, region: choiceRegion, fit: bestDiff)
-                                            onSelect(choice)
+        if croppedImage != nil {
+            self.tpa.processPhoto(image: croppedImage!, complete: {(refTPA) -> Void in
+    //            print("(\(row), \(col)) -> \(refTPA!.gridAvg)")
+                let (bestFit, bestDiff) = self.tpa.findNearestMatch(tpa: refTPA!)!
+                
+                let targetSize = CGSize(width: refRegion.width, height: refRegion.height)
+                let options = PHImageRequestOptions()
+                self.imageManager.requestImage(for: bestFit, targetSize: targetSize, contentMode: PHImageContentMode.default, options: options,
+                                               resultHandler: {(result, info) -> Void in
+                                                let choiceRegion = CGRect(x: 0, y: 0, width: Int(refRegion.width), height: Int(refRegion.height))
+                                                let choice = ImageChoice(position: (row:row,col:col), image: result!, region: choiceRegion, fit: bestDiff)
+                                                onSelect(choice)
+                })
             })
-        })
+        } else {
+            print("ok that's bad news.")
+        }
     }
     
     func select(gridSizePoints: Int, quality: Int, onSelect: @escaping (ImageChoice) -> Void) throws -> Void {
