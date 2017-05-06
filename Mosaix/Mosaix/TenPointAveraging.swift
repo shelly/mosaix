@@ -206,7 +206,7 @@ class TenPointAveraging: PhotoProcessor {
     
     init() {
         self.inProgress = false
-        self.storage = TPADictionary()
+        self.storage = KDTree()
         self.totalPhotos = 0
         self.photosComplete = 0
         if (TenPointAveraging.imageManager == nil) {
