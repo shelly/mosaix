@@ -17,6 +17,7 @@ class CreateMosaicViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        imageView.contentMode = UIViewContentMode.scaleAspectFit
         imageView.image = image
         // Do any additional setup after loading the view.
         mosaicCreator = MosaicCreator(reference: image)

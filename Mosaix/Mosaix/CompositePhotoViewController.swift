@@ -14,6 +14,7 @@ class CompositePhotoViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         print("beginning mosaic")
+        self.compositePhoto.contentMode = UIViewContentMode.scaleAspectFit
         self.compositePhoto.image = self.mosaicCreator.compositeImage
         
         do {
