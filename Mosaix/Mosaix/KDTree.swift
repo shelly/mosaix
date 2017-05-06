@@ -14,7 +14,7 @@ class KDTree : TPAStorage {
 
     public var pListPath = "kdtree.plist"
     
-    required init() {
+    required override init() {
         
     }
     

@@ -12,7 +12,7 @@ import MetalKit
 import Metal
 
 
-class RGBFloat : CustomStringConvertible, NSCoding {
+class RGBFloat : NSCoding {
 
     var r : CGFloat
     var g: CGFloat
@@ -60,7 +60,7 @@ struct TenPointAverageConstants {
     static let cols = 3
 }
 
-class TenPointAverage : NSCoding {
+class TenPointAverage : NSObject, NSCoding {
     var totalAvg : RGBFloat = RGBFloat(0,0,0)
     var gridAvg : [[RGBFloat]] = Array(repeating: Array(repeating: RGBFloat(0,0,0), count: 3), count: 3)
     
@@ -310,6 +310,8 @@ class TenPointAveraging: PhotoProcessor {
     //File Management
     
     private func loadStorageFromFile() -> Void {
+        
+        print("Trying to load storage from file.\n")
 
         let fileURL = try! FileManager.default
             .url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
@@ -324,6 +326,8 @@ class TenPointAveraging: PhotoProcessor {
     }
     
     private func saveStorageToFile() -> Void {
+        
+        print("Trying to save storage to file.\n")
         
         let toStore = NSKeyedArchiver.archivedData(withRootObject: self.storage)
         
