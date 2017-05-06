@@ -282,7 +282,7 @@ class TenPointAveraging: PhotoProcessor {
                         tba.totalAvg.r += CGFloat(result[index])/9
                         tba.totalAvg.g += CGFloat(result[index+1])/9
                         tba.totalAvg.b += CGFloat(result[index+2])/9
-                        tba.gridAvg[i][j] = RGBFloat(CGFloat(Int(result[index])), Int(result[index+1]), Int(result[index+2]))
+                        tba.gridAvg[i][j] = RGBFloat(CGFloat(Int(result[index])), CGFloat(Int(result[index+1])), CGFloat(Int(result[index+2])))
                     }
                 }
                 do {
