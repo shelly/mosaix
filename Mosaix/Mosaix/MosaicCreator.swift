@@ -17,7 +17,7 @@ enum MosaicCreationError: Error {
 
 struct MosaicCreationConstants {
     static let gridSizeMin = 2
-    static let gridSizeMax = 30
+    static let gridSizeMax = 75
     
     static let qualityMin = 1
     static let qualityMax = 100

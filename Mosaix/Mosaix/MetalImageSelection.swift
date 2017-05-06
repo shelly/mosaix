@@ -47,7 +47,8 @@ class MetalImageSelection: ImageSelection {
                 
                 let targetSize = CGSize(width: refRegion.width, height: refRegion.height)
                 let options = PHImageRequestOptions()
-                self.imageManager.requestImage(for: bestFit, targetSize: targetSize, contentMode: PHImageContentMode.default, options: options,
+                let chosenAsset = PHAsset.fetchAssets(withLocalIdentifiers: [bestFit], options: PHFetchOptions()).firstObject!
+                self.imageManager.requestImage(for: chosenAsset, targetSize: targetSize, contentMode: PHImageContentMode.default, options: options,
                                                resultHandler: {(result, info) -> Void in
                                                 let choiceRegion = CGRect(x: 0, y: 0, width: Int(refRegion.width), height: Int(refRegion.height))
                                                 let choice = ImageChoice(position: (row:row,col:col), image: result!, region: choiceRegion, fit: bestDiff)

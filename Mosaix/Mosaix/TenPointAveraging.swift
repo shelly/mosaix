@@ -217,7 +217,7 @@ class TenPointAveraging: PhotoProcessor {
 //        let dirURL = manager.URLForDirectory(.DocumentDirectory, inDomain: .UserDomainmask, appropriateForURL: nil, create: false, error: nil))
     }
     
-    func findNearestMatch(tpa: TenPointAverage) -> (PHAsset, Float)? {
+    func findNearestMatch(tpa: TenPointAverage) -> (String, Float)? {
         return self.storage.findNearestMatch(to: tpa)
     }
     
@@ -234,7 +234,7 @@ class TenPointAveraging: PhotoProcessor {
                 self.photosComplete = 0
                 var i : Int = 0
                 fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
-                    if (asset.mediaType == .image && !self.storage.isMember(asset)) {
+                    if (asset.mediaType == .image && !self.storage.isMember(asset.localIdentifier)) {
                         //Asynchronously grab image and save the values.
                         let options = PHImageRequestOptions()
                         options.isSynchronous = true
@@ -250,7 +250,7 @@ class TenPointAveraging: PhotoProcessor {
                                                                                 //                                                        }
                                                                                 self.processPhoto(image: result!.cgImage!, complete: {(tpa) -> Void in
                                                                                     if (tpa != nil) {
-                                                                                        self.storage.insert(asset: asset, tpa: tpa!)
+                                                                                        self.storage.insert(asset: asset.localIdentifier, tpa: tpa!)
                                                                                     }
                                                                                     self.photosComplete += 1
                                                                                     if (self.photosComplete == self.totalPhotos) {

@@ -29,11 +29,11 @@ import Photos
 
 private class KDNode {
     let tpa: TenPointAverage
-    let asset: PHAsset
+    let asset: String
     var left: KDNode? = nil
     var right: KDNode? = nil
     
-    init(tpa: TenPointAverage, asset: PHAsset) {
+    init(tpa: TenPointAverage, asset: String) {
         self.tpa = tpa
         self.asset = asset
     }
@@ -48,18 +48,18 @@ enum TPAComparison {
 class KDTree : TPAStorage {
     
     private var root : KDNode? = nil
-    private var assets : Set<PHAsset>
+    private var assets : Set<String>
     
     required init() {
         self.assets = []
     }
     
-    func insert(asset: PHAsset, tpa: TenPointAverage) {
+    func insert(asset: String, tpa: TenPointAverage) {
         self.root = self.insert(asset, tpa, at: self.root, level: 0)
     }
     
     
-    private func insert(_ asset: PHAsset, _ tpa: TenPointAverage, at node: KDNode?, level: Int) -> KDNode {
+    private func insert(_ asset: String, _ tpa: TenPointAverage, at node: KDNode?, level: Int) -> KDNode {
         if (node == nil) {
             self.assets.insert(asset)
             return KDNode(tpa: tpa, asset: asset)
@@ -110,16 +110,16 @@ class KDTree : TPAStorage {
         return Float(leftPixel.get(rgb) - rightPixel.get(rgb))
     }
     
-    func isMember(_ asset: PHAsset) -> Bool {
+    func isMember(_ asset: String) -> Bool {
         return self.assets.contains(asset)
     }
     
-    func findNearestMatch(to refTPA: TenPointAverage) -> (closest: PHAsset, diff: Float)? {
+    func findNearestMatch(to refTPA: TenPointAverage) -> (closest: String, diff: Float)? {
         return self.findNearestMatch(to: refTPA, from: self.root, level: 0)
     }
     
-    private func findNearestMatch(to refTPA: TenPointAverage, from node: KDNode?, level: Int) -> (closest: PHAsset, diff: Float)? {
-        var currentBest : (closest: PHAsset, diff: Float)?
+    private func findNearestMatch(to refTPA: TenPointAverage, from node: KDNode?, level: Int) -> (closest: String, diff: Float)? {
+        var currentBest : (closest: String, diff: Float)?
         
         //Base Case
         if (node == nil) {
@@ -165,7 +165,7 @@ class KDTree : TPAStorage {
         }
         
         //Now, check to see if the _other_ branch potentially has a closer node.
-        var otherBest : (closest: PHAsset, diff: Float)? = nil
+        var otherBest : (closest: String, diff: Float)? = nil
         if (comparison == TPAComparison.less && (currentBest == nil || self.isCloser(refTPA, to: node!.right, than: currentBest!.diff, atLevel: level + 1))) {
             otherBest = self.findNearestMatch(to: refTPA, from: node!.right, level: level + 1)
         } else if (comparison == TPAComparison.greater && (currentBest == nil || self.isCloser(refTPA, to: node!.left, than: currentBest!.diff, atLevel: level + 1))) {
