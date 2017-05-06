@@ -222,7 +222,13 @@ class TenPointAveraging: PhotoProcessor {
         self.photosComplete = 0
         var i : Int = 0
         fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
-            if (asset.mediaType == .image) {
+            i += 1
+            if (i > 1210) {
+                stop.pointee = true
+                complete()
+                return
+            }
+            if (asset.mediaType == .image && !self.storage.isMember(asset)) {
                 //Asynchronously grab image and save the values.
                 let options = PHImageRequestOptions()
                 options.isSynchronous = true
