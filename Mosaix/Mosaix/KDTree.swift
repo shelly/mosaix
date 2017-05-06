@@ -77,7 +77,7 @@ class KDTree : TPAStorage {
     }
     
     private func compareAtLevel(_ left: TenPointAverage, _ right: TenPointAverage, atLevel: Int) -> TPAComparison {
-        let difference: Float = self.distanceAtLevel(left, right, atLevel: atLevel)
+        let difference: Float = self.differenceAtLevel(left, right, atLevel: atLevel)
         
         if (difference < 0) {
             return TPAComparison.less
@@ -88,7 +88,19 @@ class KDTree : TPAStorage {
         }
     }
     
+    /**
+     * Returns the distance between the left and right TenPointAverages along the axis determined by atLevel.
+     *
+     * The result is always non-negative.
+     */
     private func distanceAtLevel(_ left: TenPointAverage, _ right: TenPointAverage, atLevel: Int) -> Float {
+        return Float(abs(self.differenceAtLevel(left, right, atLevel: atLevel)))
+    }
+    
+    /**
+     * Returns the difference between left and right along the axis defined by atLevel.
+     */
+    private func differenceAtLevel(_ left: TenPointAverage, _ right: TenPointAverage, atLevel: Int) -> Float {
         let gridIndex : Int = atLevel % 9
         let rgb : Int = (atLevel + (atLevel/3) + (atLevel/9)) % 3
         
@@ -151,7 +163,7 @@ class KDTree : TPAStorage {
         if (node == nil) {
             return false
         }
-        return self.distanceAtLevel(tpa, node!.tpa, atLevel: atLevel) > diff
+        return self.distanceAtLevel(tpa, node!.tpa, atLevel: atLevel) < diff
     }
     
     func toString() -> String {

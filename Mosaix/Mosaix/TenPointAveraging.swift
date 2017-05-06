@@ -157,6 +157,7 @@ class MetalPipeline {
         commandEncoder.endEncoding()
         commandBuffer.addCompletedHandler({(buffer) -> Void in
             let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: bufferCount))
+//            print("\(results)")
             complete(results)
         })
         commandBuffer.commit()
@@ -232,8 +233,9 @@ class TenPointAveraging: PhotoProcessor {
                                                    resultHandler: {(result, info) -> Void in
                                                     if (result != nil && !self.storage.isMember(asset)) {
                                                         i += 1
-                                                        if (i > 300) {
+                                                        if (i > 200) {
                                                             stop.pointee = true
+                                                            self.inProgress = false
                                                             complete()
                                                         }
                                                         self.processPhoto(image: result!.cgImage!, complete: {(tpa) -> Void in
@@ -277,9 +279,9 @@ class TenPointAveraging: PhotoProcessor {
         if (texture != nil) {
             TenPointAveraging.metal?.processImageTexture(texture: texture!, complete: {(result : [UInt32]) -> Void in
                 let tba = TenPointAverage()
-                for i in 0..<3 {
-                    for j in 0..<3 {
-                        let index = 3 * i + j
+                for i in 0 ..< 3 {
+                    for j in 0  ..< 3 {
+                        let index = 9 * i + (3 * j)
                         tba.totalAvg.r += CGFloat(result[index])/9
                         tba.totalAvg.g += CGFloat(result[index+1])/9
                         tba.totalAvg.b += CGFloat(result[index+2])/9

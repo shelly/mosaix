@@ -41,7 +41,7 @@ class MetalImageSelection: ImageSelection {
         let croppedImage : CGImage = self.refCGImage.cropping(to: refRegion)!
         
         self.tpa.processPhoto(image: croppedImage, complete: {(refTPA) -> Void in
-            
+//            print("(\(row), \(col)) -> \(refTPA!.gridAvg)")
             let (bestFit, bestDiff) = self.tpa.findNearestMatch(tpa: refTPA!)!
             
             let targetSize = CGSize(width: refRegion.width, height: refRegion.height)
@@ -66,10 +66,10 @@ class MetalImageSelection: ImageSelection {
             let numCols : Int = Int(self.referenceImage.size.width) / gridSizePoints
             
             let rows : [Int] = GKRandomSource.sharedRandom().arrayByShufflingObjects(in: Array(0 ..< numRows)) as! [Int]
-            let cols : [Int] = GKRandomSource.sharedRandom().arrayByShufflingObjects(in: Array(0 ..< numCols)) as! [Int]
             
             for row in rows {
                 DispatchQueue.global(qos: .background).async {
+                    let cols : [Int] = GKRandomSource.sharedRandom().arrayByShufflingObjects(in: Array(0 ..< numCols)) as! [Int]
                     for col in cols {
                         self.findBestMatch(row: row, col: col, refRegion: CGRect(x: col * gridSizePoints, y: row * gridSizePoints, width: gridSizePoints,
                                                                                  height: gridSizePoints), onSelect: {(choice: ImageChoice) -> Void in
