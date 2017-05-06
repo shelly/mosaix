@@ -200,9 +200,6 @@ class TenPointAveraging: PhotoProcessor {
                 userAlbumsOptions.predicate = NSPredicate(format: "estimatedAssetCount > 0")
                 let userAlbums = PHAssetCollection.fetchAssetCollections(with: PHAssetCollectionType.album, subtype: PHAssetCollectionSubtype.albumSyncedAlbum, options: userAlbumsOptions)
                 
-                
-                
-                //                self.processAllPhotos(fetchResult: PHAsset.fetchAssets(with: .image, options: fetchOptions), complete: {() -> Void in
                 self.processAllPhotos(userAlbums: userAlbums, complete: {() -> Void in
                     //Save to file
                     complete()
@@ -230,9 +227,10 @@ class TenPointAveraging: PhotoProcessor {
         userAlbums.enumerateObjects({(collection: PHAssetCollection, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             if collection.estimatedAssetCount > 0 {
                 stop.pointee = true
-                let fetchResult = PHAsset.fetchAssets(in: collection, options: PHFetchOptions())
+                let options = PHFetchOptions()
+                options.fetchLimit = 3000
+                let fetchResult = PHAsset.fetchAssets(in: collection, options: options)
                 self.totalPhotos = fetchResult.count
-                print("Processing all photos from \(collection.localizedTitle)")
                 self.photosComplete = 0
                 var i : Int = 0
                 fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in

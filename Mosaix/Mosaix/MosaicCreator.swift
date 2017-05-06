@@ -16,10 +16,10 @@ enum MosaicCreationError: Error {
 }
 
 struct MosaicCreationConstants {
-    static let gridSizeMin = 10
-    static let gridSizeMax = 500
+    static let gridSizeMin = 2
+    static let gridSizeMax = 30
     
-    static let qualityMin = 0
+    static let qualityMin = 1
     static let qualityMax = 100
 }
 
@@ -28,7 +28,7 @@ class MosaicCreator {
     private let imageSelector : ImageSelection
     private let reference : UIImage
     private var inProgress : Bool
-    private var _gridSizePoints : Int = (MosaicCreationConstants.gridSizeMax + MosaicCreationConstants.gridSizeMin)/2
+    private var _gridSizePoints : Int
     private var _quality : Int = (MosaicCreationConstants.qualityMax + MosaicCreationConstants.qualityMin)/2
     private let compositeContext: CGContext
     
@@ -46,29 +46,33 @@ class MosaicCreator {
         self.inProgress = false
         self.reference = reference
         self.imageSelector = MetalImageSelection(refImage: reference)
-            //NaiveImageSelection(refImage: reference)
         
         self.totalGridSpaces = 0
         self.gridSpacesFilled = 0
         
         UIGraphicsBeginImageContextWithOptions(self.reference.size, false, 0)
         self.compositeContext = UIGraphicsGetCurrentContext()!
-//        self.compositeContext.translateBy(x: 0, y: self.reference.size.height)
-//        self.compositeContext.scaleBy(x: 1, y: -1.0)
         UIGraphicsPopContext()
         
         
+        do {
+            self._gridSizePoints = 0
+            try self.setGridSizePoints((MosaicCreationConstants.gridSizeMax + MosaicCreationConstants.gridSizeMin)/2)
+        } catch {
+            print("error initializing grid size")
+        }
     }
     
     func getGridSizePoints() -> Int {
         return self._gridSizePoints
     }
-    func setGridSizePoints(gridSizePoints : Int) throws {
+    func setGridSizePoints(_ gridSizePoints : Int) throws {
         guard (gridSizePoints >= MosaicCreationConstants.gridSizeMin &&
                 gridSizePoints <= MosaicCreationConstants.gridSizeMax) else {
                     throw MosaicCreationError.GridSizeOutOfBounds
             }
-            self._gridSizePoints = gridSizePoints
+            let spacesInRow = (MosaicCreationConstants.gridSizeMax - gridSizePoints) + 10
+            self._gridSizePoints = Int(min(self.reference.size.width, self.reference.size.height)) / spacesInRow
     }
     
     func getQuality() -> Int {
@@ -98,10 +102,9 @@ class MosaicCreator {
                         let drawRect = CGRect(x: choice.position.col * Int(self._gridSizePoints) + Int(choice.region.minX),
                                                   y: choice.position.row * Int(self._gridSizePoints) + Int(choice.region.minY),
                                                   width: Int(choice.region.width), height: Int(choice.region.height))
-//                        print("drawing to \(drawRect)")
+
+                        
                         choice.image.draw(in: drawRect)
-//
-//                        self.compositeContext.draw(choice.image.cgImage!, in:drawRect)
                         UIGraphicsPopContext()
                         if (self.gridSpacesFilled == self.totalGridSpaces) {
                                 self.inProgress = false
