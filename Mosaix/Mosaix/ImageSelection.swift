@@ -24,5 +24,6 @@ enum ImageSelectionError: Error {
 
 protocol ImageSelection {
     init(refImage : UIImage)
+    func preprocess(then complete: @escaping () -> Void) throws -> Void
     func select(gridSizePoints : Int, quality: Int, onSelect : @escaping (ImageChoice) -> Void) throws -> Void
 }

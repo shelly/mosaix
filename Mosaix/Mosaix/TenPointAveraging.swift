@@ -215,7 +215,6 @@ class TenPointAveraging: PhotoProcessor {
         if (TenPointAveraging.metal == nil) {
             TenPointAveraging.metal = MetalPipeline()
         }
-        self.loadStorageFromFile()
     }
     
     func preprocess(complete: @escaping () -> Void) throws -> Void {
@@ -223,25 +222,28 @@ class TenPointAveraging: PhotoProcessor {
             throw LibraryProcessingError.PreprocessingInProgress
         }
         self.inProgress = true
-        PHPhotoLibrary.requestAuthorization { (status) in
-            switch status {
-            case .authorized:
-                let userAlbumsOptions = PHFetchOptions()
-                //userAlbumsOptions.predicate = NSPredicate(format: "estimatedAssetCount > 0")
-                let userAlbums = PHAssetCollection.fetchAssetCollections(with: PHAssetCollectionType.smartAlbum, subtype: PHAssetCollectionSubtype.smartAlbumUserLibrary, options: userAlbumsOptions)
-                print(userAlbums.firstObject?.localizedTitle)
-                
-                
-                //                self.processAllPhotos(fetchResult: PHAsset.fetchAssets(with: .image, options: fetchOptions), complete: {() -> Void in
-                self.processAllPhotos(userAlbums: userAlbums, complete: {() -> Void in
-                    //Save to file
-                    self.saveStorageToFile()
-                    complete()
-                })
-            case .denied, .restricted:
-                print("Library Access Denied!")
-            case .notDetermined:
-                print("Library Access Not Determined!")
+        
+        DispatchQueue.global(qos: .background).async {
+            self.loadStorageFromFile()
+            PHPhotoLibrary.requestAuthorization { (status) in
+                switch status {
+                case .authorized:
+                    let userAlbumsOptions = PHFetchOptions()
+                    userAlbumsOptions.predicate = NSPredicate(format: "estimatedAssetCount > 0")
+                    let userAlbums = PHAssetCollection.fetchAssetCollections(with: PHAssetCollectionType.album, subtype: PHAssetCollectionSubtype.albumSyncedAlbum, options: userAlbumsOptions)
+
+                    self.processAllPhotos(userAlbums: userAlbums, complete: {() -> Void in
+                        //Save to file
+                        self.saveStorageToFile()
+                        DispatchQueue.main.async {
+                            complete()
+                        }
+                    })
+                case .denied, .restricted:
+                    print("Library Access Denied!")
+                case .notDetermined:
+                    print("Library Access Not Determined!")
+                }
             }
         }
     }

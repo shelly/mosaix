@@ -106,6 +106,10 @@ class NaiveImageSelection: ImageSelection {
         onSelect(bestMatch!)
     }
     
+    func preprocess(then complete: @escaping () -> Void) throws -> Void {
+        complete()
+    }
+    
     func select(gridSizePoints: Int, quality: Int, onSelect: @escaping (ImageChoice) -> Void) throws -> Void {
         if (allPhotos == nil) {
             throw ImageSelectionError.PreprocessingIncomplete
