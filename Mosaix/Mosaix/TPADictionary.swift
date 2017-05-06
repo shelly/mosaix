@@ -48,12 +48,31 @@ class TPADictionary : NSObject, TPAStorage {
     //NSCoding
     
     required init?(coder aDecoder: NSCoder) {
-        self.averages = aDecoder.decodeObject(forKey: "averages") as! [PHAsset : TenPointAverage]
+        print("Decoding averages")
+        self.averages = [:]
+        var averages: [PHAsset : TenPointAverage] = [:]
+        
+        let identifiers : [String: TenPointAverage] = aDecoder.decodeObject(forKey: "identifier_averages") as! [String : TenPointAverage]
+        
+        for (identifier, assetTPA) in identifiers {
+            let asset = PHAsset.fetchAssets(withLocalIdentifiers: [identifier], options: nil)
+            asset.enumerateObjects({ (asset, _, _) in
+                averages[asset] = assetTPA
+            })
+        }
+        
+        self.averages = averages
     }
     
     
     func encode(with aCoder: NSCoder) -> Void{
-        aCoder.encode(averages, forKey: "averages")
+        print("Trying to encode averages")
+        var identifiers : [String : TenPointAverage] = [:]
+        for (asset, assetTPA) in self.averages {
+            identifiers[asset.localIdentifier] = assetTPA
+        }
+        aCoder.encode(identifiers, forKey: "identifier_averages")
+        print("Averages encoded")
     }
     
 }

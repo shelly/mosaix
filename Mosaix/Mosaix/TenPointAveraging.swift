@@ -229,12 +229,17 @@ class TenPointAveraging: PhotoProcessor {
                 let _ = autoreleasepool {
                     TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: options,
                                                    resultHandler: {(result, info) -> Void in
+                                                    i += 1
+                                                    if (i > 1210) {
+                                                        stop.pointee = true
+                                                        complete()
+                                                    }
                                                     if (result != nil && !self.storage.isMember(asset)) {
-                                                        i += 1
-                                                        if (i > 300) {
-                                                            stop.pointee = true
-                                                            complete()
-                                                        }
+//                                                        i += 1
+//                                                        if (i > 300) {
+//                                                            stop.pointee = true
+//                                                            complete()
+//                                                        }
                                                         self.processPhoto(image: result!.cgImage!, complete: {(tpa) -> Void in
                                                             if (tpa != nil) {
                                                                 self.storage.insert(asset: asset, tpa: tpa!)
