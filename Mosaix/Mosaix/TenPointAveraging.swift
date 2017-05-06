@@ -246,7 +246,7 @@ class TenPointAveraging: PhotoProcessor {
         }
     }
     
-    func findNearestMatch(tpa: TenPointAverage) -> (PHAsset, Float)? {
+    func findNearestMatch(tpa: TenPointAverage) -> (String, Float)? {
         return self.storage.findNearestMatch(to: tpa)
     }
     
@@ -256,19 +256,22 @@ class TenPointAveraging: PhotoProcessor {
         userAlbums.enumerateObjects({(collection: PHAssetCollection, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             if collection.estimatedAssetCount > 1000 {
                 stop.pointee = true
-                let fetchResult = PHAsset.fetchAssets(in: collection, options: PHFetchOptions())
+                let options = PHFetchOptions()
+                options.fetchLimit = 3000
+                let fetchResult = PHAsset.fetchAssets(in: collection, options: options)
                 self.totalPhotos = fetchResult.count
-                print("Processing all photos from \(collection.localizedTitle)")
                 self.photosComplete = 0
                 var i : Int = 0
                 fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
+
                 i += 1
                 if (i > 1200) {
                     stop.pointee = true
                     self.inProgress = false
                     complete()
                 }
-                    if (asset.mediaType == .image && !self.storage.isMember(asset)) {
+                    if (asset.mediaType == .image && !self.storage.isMember(asset.localIdentifier)) {
+
                         //Asynchronously grab image and save the values.
                         let options = PHImageRequestOptions()
                         options.isSynchronous = true
@@ -278,7 +281,7 @@ class TenPointAveraging: PhotoProcessor {
                                         if (result != nil) {
                                             self.processPhoto(image: result!.cgImage!, complete: {(tpa) -> Void in
                                                 if (tpa != nil) {
-                                                    self.storage.insert(asset: asset, tpa: tpa!)
+                                                    self.storage.insert(asset: asset.localIdentifier, tpa: tpa!)
                                                 }
                                                 self.photosComplete += 1
                                                 if (self.photosComplete == self.totalPhotos) {
@@ -295,6 +298,7 @@ class TenPointAveraging: PhotoProcessor {
                                                 complete()
                                             }
                                         }
+
                             })
                         }
                     }

@@ -11,25 +11,26 @@ import Photos
 
 class TPADictionary : NSObject, TPAStorage {
     
-    public var pListPath = "dictionary.plist"
 
-    private var averages : [PHAsset : TenPointAverage]
+    public var pListPath = "dictionary.plist"
+    private var averages : [String : TenPointAverage]
+
     
     required override init() {
         self.averages = [:]
         super.init()
     }
     
-    func insert(asset: PHAsset, tpa: TenPointAverage) {
+    func insert(asset: String, tpa: TenPointAverage) {
         self.averages[asset] = tpa
     }
     
-    func isMember(_ asset: PHAsset) -> Bool {
+    func isMember(_ asset: String) -> Bool {
         return (self.averages[asset] != nil)
     }
     
-    func findNearestMatch(to refTPA: TenPointAverage) -> (closest: PHAsset, diff: Float)? {
-        var bestFit : PHAsset? = nil
+    func findNearestMatch(to refTPA: TenPointAverage) -> (closest: String, diff: Float)? {
+        var bestFit : String? = nil
         var bestDiff : CGFloat = 0.0
         for (asset, assetTPA) in self.averages {
             let diff = assetTPA - refTPA
@@ -50,28 +51,13 @@ class TPADictionary : NSObject, TPAStorage {
     required init?(coder aDecoder: NSCoder) {
         print("Decoding averages")
         self.averages = [:]
-        var averages: [PHAsset : TenPointAverage] = [:]
-        
-        let identifiers : [String: TenPointAverage] = aDecoder.decodeObject(forKey: "identifier_averages") as! [String : TenPointAverage]
-        
-        for (identifier, assetTPA) in identifiers {
-            let asset = PHAsset.fetchAssets(withLocalIdentifiers: [identifier], options: nil)
-            asset.enumerateObjects({ (asset, _, _) in
-                averages[asset] = assetTPA
-            })
-        }
-        
-        self.averages = averages
+        self.averages = aDecoder.decodeObject(forKey: "identifier_averages") as! [String : TenPointAverage]
     }
     
     
     func encode(with aCoder: NSCoder) -> Void{
         print("Trying to encode averages")
-        var identifiers : [String : TenPointAverage] = [:]
-        for (asset, assetTPA) in self.averages {
-            identifiers[asset.localIdentifier] = assetTPA
-        }
-        aCoder.encode(identifiers, forKey: "identifier_averages")
+        aCoder.encode(self.averages, forKey: "identifier_averages")
         print("Averages encoded")
     }
     
