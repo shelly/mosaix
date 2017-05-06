@@ -25,8 +25,23 @@ class RGBFloat : NSObject, NSCoding {
         self.b = blue
     }
     
+    func get(_ index: Int) -> CGFloat {
+        if (index == 0) {
+            return self.r
+        } else if (index == 1) {
+            return self.g
+        } else {
+            return self.b
+        }
+    }
+    
+
     static func -(left: RGBFloat, right: RGBFloat) -> CGFloat {
         return abs(left.r-right.r) + abs(left.g-right.g) + abs(left.b-right.b)
+    }
+
+    static func ==(left: RGBFloat, right: RGBFloat) -> Bool {
+        return left.r == right.r && left.g == right.g && left.b == right.b
     }
     
     override var description : String {
@@ -66,13 +81,24 @@ class TenPointAverage : NSObject, NSCoding {
     
     static func -(left: TenPointAverage, right: TenPointAverage) -> CGFloat {
         var diff : CGFloat = 0.0
-        diff += left.totalAvg - right.totalAvg
+        diff += abs(left.totalAvg - right.totalAvg)
         for row in 0..<TenPointAverageConstants.rows {
             for col in 0..<TenPointAverageConstants.cols {
-                diff += left.gridAvg[row][col] - right.gridAvg[row][col]
+                diff += abs(left.gridAvg[row][col] - right.gridAvg[row][col])
             }
         }
         return diff
+    }
+    
+    static func ==(left: TenPointAverage, right: TenPointAverage) -> Bool {
+        for i in 0 ..< 3 {
+            for j in 0 ..< 3 {
+                if !(left.gridAvg[i][j] == right.gridAvg[i][j]) {
+                    return false
+                }
+            }
+        }
+        return true
     }
     
     //For NSCoding
@@ -160,6 +186,7 @@ class MetalPipeline {
         commandEncoder.endEncoding()
         commandBuffer.addCompletedHandler({(buffer) -> Void in
             let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: bufferCount))
+//            print("\(results)")
             complete(results)
         })
         commandBuffer.commit()
@@ -199,8 +226,15 @@ class TenPointAveraging: PhotoProcessor {
         PHPhotoLibrary.requestAuthorization { (status) in
             switch status {
             case .authorized:
-                let fetchOptions = PHFetchOptions()
-                self.processAllPhotos(fetchResult: PHAsset.fetchAssets(with: fetchOptions), complete: {() -> Void in
+                let userAlbumsOptions = PHFetchOptions()
+                //userAlbumsOptions.predicate = NSPredicate(format: "estimatedAssetCount > 0")
+                let userAlbums = PHAssetCollection.fetchAssetCollections(with: PHAssetCollectionType.smartAlbum, subtype: PHAssetCollectionSubtype.smartAlbumUserLibrary, options: userAlbumsOptions)
+                print(userAlbums.firstObject?.localizedTitle)
+                
+                
+                //                self.processAllPhotos(fetchResult: PHAsset.fetchAssets(with: .image, options: fetchOptions), complete: {() -> Void in
+                self.processAllPhotos(userAlbums: userAlbums, complete: {() -> Void in
+                    //Save to file
                     self.saveStorageToFile()
                     complete()
                 })
@@ -216,57 +250,55 @@ class TenPointAveraging: PhotoProcessor {
         return self.storage.findNearestMatch(to: tpa)
     }
     
- 
-    private func processAllPhotos(fetchResult: PHFetchResult<PHAsset>, complete: @escaping () -> Void) {
-        self.totalPhotos = fetchResult.count
-        self.photosComplete = 0
-        var i : Int = 0
-        fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
-            i += 1
-            if (i > 1210) {
+
+    private func processAllPhotos(userAlbums: PHFetchResult<PHAssetCollection>, complete: @escaping () -> Void) {
+        
+        userAlbums.enumerateObjects({(collection: PHAssetCollection, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
+            if collection.estimatedAssetCount > 1000 {
                 stop.pointee = true
-                complete()
-                return
-            }
-            if (asset.mediaType == .image && !self.storage.isMember(asset)) {
-                //Asynchronously grab image and save the values.
-                let options = PHImageRequestOptions()
-                options.isSynchronous = true
-                let _ = autoreleasepool {
-                    TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: options,
-                                                   resultHandler: {(result, info) -> Void in
-                                                    i += 1
-                                                    if (i > 1210) {
-                                                        stop.pointee = true
-                                                        complete()
-                                                    }
-                                                    if (result != nil && !self.storage.isMember(asset)) {
-//                                                        i += 1
-//                                                        if (i > 300) {
-//                                                            stop.pointee = true
-//                                                            complete()
-//                                                        }
-                                                        self.processPhoto(image: result!.cgImage!, complete: {(tpa) -> Void in
-                                                            if (tpa != nil) {
-                                                                self.storage.insert(asset: asset, tpa: tpa!)
-                                                            }
-                                                            self.photosComplete += 1
-                                                            if (self.photosComplete == self.totalPhotos) {
-                                                                self.inProgress = false
-                                                                complete()
-                                                            } else if (self.photosComplete % 20 == 0) {
-                                                                print("\(self.photosComplete)/\(self.totalPhotos)")
-                                                            }
-                                                        })
-                                                    } else {
-                                                        self.photosComplete += 1
-                                                        if (self.photosComplete == self.totalPhotos) {
-                                                            self.inProgress = false
-                                                            complete()
-                                                        }
-                                                    }
-                    })
+                let fetchResult = PHAsset.fetchAssets(in: collection, options: PHFetchOptions())
+                self.totalPhotos = fetchResult.count
+                print("Processing all photos from \(collection.localizedTitle)")
+                self.photosComplete = 0
+                var i : Int = 0
+                fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
+                i += 1
+                if (i > 1200) {
+                    stop.pointee = true
+                    self.inProgress = false
+                    complete()
                 }
+                    if (asset.mediaType == .image && !self.storage.isMember(asset)) {
+                        //Asynchronously grab image and save the values.
+                        let options = PHImageRequestOptions()
+                        options.isSynchronous = true
+                        let _ = autoreleasepool {
+                            TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: options,
+                                     resultHandler: {(result, info) -> Void in
+                                        if (result != nil) {
+                                            self.processPhoto(image: result!.cgImage!, complete: {(tpa) -> Void in
+                                                if (tpa != nil) {
+                                                    self.storage.insert(asset: asset, tpa: tpa!)
+                                                }
+                                                self.photosComplete += 1
+                                                if (self.photosComplete == self.totalPhotos) {
+                                                    self.inProgress = false
+                                                    complete()
+                                                } else if (self.photosComplete % 20 == 0) {
+                                                    print("\(self.photosComplete)/\(self.totalPhotos)")
+                                                }
+                                            })
+                                        } else {
+                                            self.photosComplete += 1
+                                            if (self.photosComplete == self.totalPhotos) {
+                                                self.inProgress = false
+                                                complete()
+                                            }
+                                        }
+                            })
+                        }
+                    }
+                })
             }
         })
     }
@@ -287,9 +319,9 @@ class TenPointAveraging: PhotoProcessor {
         if (texture != nil) {
             TenPointAveraging.metal?.processImageTexture(texture: texture!, complete: {(result : [UInt32]) -> Void in
                 let tba = TenPointAverage()
-                for i in 0..<3 {
-                    for j in 0..<3 {
-                        let index = 3 * i + j
+                for i in 0 ..< 3 {
+                    for j in 0  ..< 3 {
+                        let index = 9 * i + (3 * j)
                         tba.totalAvg.r += CGFloat(result[index])/9
                         tba.totalAvg.g += CGFloat(result[index+1])/9
                         tba.totalAvg.b += CGFloat(result[index+2])/9

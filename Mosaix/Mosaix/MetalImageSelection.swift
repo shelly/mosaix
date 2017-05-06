@@ -38,21 +38,25 @@ class MetalImageSelection: ImageSelection {
     }
     
     private func findBestMatch(row: Int, col: Int, refRegion: CGRect, onSelect : @escaping (ImageChoice) -> Void) {
-        let croppedImage : CGImage = self.refCGImage.cropping(to: refRegion)!
-        
-        self.tpa.processPhoto(image: croppedImage, complete: {(refTPA) -> Void in
-            
-            let (bestFit, bestDiff) = self.tpa.findNearestMatch(tpa: refTPA!)!
-            
-            let targetSize = CGSize(width: refRegion.width, height: refRegion.height)
-            let options = PHImageRequestOptions()
-            self.imageManager.requestImage(for: bestFit, targetSize: targetSize, contentMode: PHImageContentMode.default, options: options,
-                                           resultHandler: {(result, info) -> Void in
-                                            let choiceRegion = CGRect(x: 0, y: 0, width: Int(refRegion.width), height: Int(refRegion.height))
-                                            let choice = ImageChoice(position: (row:row,col:col), image: result!, region: choiceRegion, fit: bestDiff)
-                                            onSelect(choice)
+        let croppedImage : CGImage? = self.refCGImage.cropping(to: refRegion)
+//        print("attempted to crop to \(refRegion) \t from \(self.refCGImage.width)x\(self.refCGImage.height)")
+        if croppedImage != nil {
+            self.tpa.processPhoto(image: croppedImage!, complete: {(refTPA) -> Void in
+    //            print("(\(row), \(col)) -> \(refTPA!.gridAvg)")
+                let (bestFit, bestDiff) = self.tpa.findNearestMatch(tpa: refTPA!)!
+                
+                let targetSize = CGSize(width: refRegion.width, height: refRegion.height)
+                let options = PHImageRequestOptions()
+                self.imageManager.requestImage(for: bestFit, targetSize: targetSize, contentMode: PHImageContentMode.default, options: options,
+                                               resultHandler: {(result, info) -> Void in
+                                                let choiceRegion = CGRect(x: 0, y: 0, width: Int(refRegion.width), height: Int(refRegion.height))
+                                                let choice = ImageChoice(position: (row:row,col:col), image: result!, region: choiceRegion, fit: bestDiff)
+                                                onSelect(choice)
+                })
             })
-        })
+        } else {
+            print("ok that's bad news.")
+        }
     }
     
     func select(gridSizePoints: Int, quality: Int, onSelect: @escaping (ImageChoice) -> Void) throws -> Void {
@@ -64,20 +68,29 @@ class MetalImageSelection: ImageSelection {
             
             let numRows : Int = Int(self.referenceImage.size.height) / gridSizePoints
             let numCols : Int = Int(self.referenceImage.size.width) / gridSizePoints
+//            print("\(numRows) rows and \(numCols) cols")
+            let numThreads : Int = 32
             
-            let rows : [Int] = GKRandomSource.sharedRandom().arrayByShufflingObjects(in: Array(0 ..< numRows)) as! [Int]
-            let cols : [Int] = GKRandomSource.sharedRandom().arrayByShufflingObjects(in: Array(0 ..< numCols)) as! [Int]
-            
-            for row in rows {
+            for threadId in 0 ..< numThreads {
                 DispatchQueue.global(qos: .background).async {
-                    for col in cols {
-                        self.findBestMatch(row: row, col: col, refRegion: CGRect(x: col * gridSizePoints, y: row * gridSizePoints, width: gridSizePoints,
-                                                                                 height: gridSizePoints), onSelect: {(choice: ImageChoice) -> Void in
-                                                                                    DispatchQueue.main.async {
-                                                                                        onSelect(choice)
-                                                                                    }
-                            
-                        })
+                    for i in stride(from: threadId, to: numRows * numCols, by: numThreads) {
+                        let row = i / numCols
+                        let col = i % numCols
+                        let x = col * gridSizePoints
+                        let y = row * gridSizePoints
+                        //Make sure that we cover the whole image and don't go over!
+                        let rectWidth = min(Int(self.referenceImage.size.width) - x, gridSizePoints)
+                        let rectHeight = min(Int(self.referenceImage.size.height) - y, gridSizePoints)
+//                        print("row \(row), col \(col) -> (\(x), \(y), \(rectWidth), \(rectHeight))")
+                        if (rectWidth > 0 && rectHeight > 0) {
+                            self.findBestMatch(row: row, col: col, refRegion: CGRect(x: x, y: y, width: rectWidth, height: rectHeight),
+                                               onSelect: {(choice: ImageChoice) -> Void in
+                                                    DispatchQueue.main.async {
+                                                        onSelect(choice)
+                                                    }
+                                                
+                            })
+                        }
                     }
                 }
             }

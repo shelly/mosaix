@@ -44,7 +44,7 @@ kernel void findNinePointAverage(
     
     uint squareIndex = threadGroupId;
     if (squareIndex < squaresInRow * squaresInRow) {
-        float3 sum = float3(0.0, 0.0, 0.0);
+        float4 sum = float4(0.0, 0.0, 0.0, 0.0);
         int numRows = 0;
         for (uint row = threadId; row < squareHeight; row += threadsInGroup) {
             numRows++;
@@ -57,11 +57,10 @@ kernel void findNinePointAverage(
             for (uint delta = 0; delta < squareWidth; delta++) {
                 uint2 coord = uint2(pixelRow, squareCol*squareWidth + delta);
                 float4 colorAtIndex = image.read(coord);
-                sum.r += colorAtIndex.r;
-                sum.g += colorAtIndex.g;
-                sum.b += colorAtIndex.b;
+                sum += colorAtIndex;
             }
         }
+        threadgroup_barrier(mem_flags::mem_device);
         if (numRows > 0) {
             sum.r = sum.r * 255 / (numRows * squareWidth);
             sum.g = sum.g * 255 / (numRows * squareWidth);
