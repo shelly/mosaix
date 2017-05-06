@@ -195,8 +195,15 @@ class TenPointAveraging: PhotoProcessor {
         PHPhotoLibrary.requestAuthorization { (status) in
             switch status {
             case .authorized:
-                let fetchOptions = PHFetchOptions()
-                self.processAllPhotos(fetchResult: PHAsset.fetchAssets(with: fetchOptions), complete: {() -> Void in
+                
+                let userAlbumsOptions = PHFetchOptions()
+                userAlbumsOptions.predicate = NSPredicate(format: "estimatedAssetCount > 0")
+                let userAlbums = PHAssetCollection.fetchAssetCollections(with: PHAssetCollectionType.album, subtype: PHAssetCollectionSubtype.albumSyncedAlbum, options: userAlbumsOptions)
+                
+                
+                
+                //                self.processAllPhotos(fetchResult: PHAsset.fetchAssets(with: .image, options: fetchOptions), complete: {() -> Void in
+                self.processAllPhotos(userAlbums: userAlbums, complete: {() -> Void in
                     //Save to file
                     complete()
                 })
@@ -218,46 +225,55 @@ class TenPointAveraging: PhotoProcessor {
     }
     
  
-    private func processAllPhotos(fetchResult: PHFetchResult<PHAsset>, complete: @escaping () -> Void) {
-        self.totalPhotos = fetchResult.count
-        self.photosComplete = 0
-        var i : Int = 0
-        fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
-            if (asset.mediaType == .image) {
-                //Asynchronously grab image and save the values.
-                let options = PHImageRequestOptions()
-                options.isSynchronous = true
-                let _ = autoreleasepool {
-                    TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: options,
-                                                   resultHandler: {(result, info) -> Void in
-                                                    if (result != nil && !self.storage.isMember(asset)) {
-                                                        i += 1
-                                                        if (i > 200) {
-                                                            stop.pointee = true
-                                                            self.inProgress = false
-                                                            complete()
-                                                        }
-                                                        self.processPhoto(image: result!.cgImage!, complete: {(tpa) -> Void in
-                                                            if (tpa != nil) {
-                                                                self.storage.insert(asset: asset, tpa: tpa!)
-                                                            }
-                                                            self.photosComplete += 1
-                                                            if (self.photosComplete == self.totalPhotos) {
-                                                                self.inProgress = false
-                                                                complete()
-                                                            } else if (self.photosComplete % 20 == 0) {
-                                                                print("\(self.photosComplete)/\(self.totalPhotos)")
-                                                            }
-                                                        })
-                                                    } else {
-                                                        self.photosComplete += 1
-                                                        if (self.photosComplete == self.totalPhotos) {
-                                                            self.inProgress = false
-                                                            complete()
-                                                        }
-                                                    }
-                    })
-                }
+    private func processAllPhotos(userAlbums: PHFetchResult<PHAssetCollection>, complete: @escaping () -> Void) {
+        
+        userAlbums.enumerateObjects({(collection: PHAssetCollection, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
+            if collection.estimatedAssetCount > 0 {
+                stop.pointee = true
+                let fetchResult = PHAsset.fetchAssets(in: collection, options: PHFetchOptions())
+                self.totalPhotos = fetchResult.count
+                print("Processing all photos from \(collection.localizedTitle)")
+                self.photosComplete = 0
+                var i : Int = 0
+                fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
+                    if (asset.mediaType == .image && !self.storage.isMember(asset)) {
+                        //Asynchronously grab image and save the values.
+                        let options = PHImageRequestOptions()
+                        options.isSynchronous = true
+                        let _ = autoreleasepool {
+                            TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: options,
+                                                                         resultHandler: {(result, info) -> Void in
+                                                                            if (result != nil) {
+                                                                                i += 1
+                                                                                //                                                        if (i > 600) {
+                                                                                //                                                            stop.pointee = true
+                                                                                //                                                            self.inProgress = false
+                                                                                //                                                            complete()
+                                                                                //                                                        }
+                                                                                self.processPhoto(image: result!.cgImage!, complete: {(tpa) -> Void in
+                                                                                    if (tpa != nil) {
+                                                                                        self.storage.insert(asset: asset, tpa: tpa!)
+                                                                                    }
+                                                                                    self.photosComplete += 1
+                                                                                    if (self.photosComplete == self.totalPhotos) {
+                                                                                        self.inProgress = false
+                                                                                        complete()
+                                                                                    } else if (self.photosComplete % 20 == 0) {
+                                                                                        print("\(self.photosComplete)/\(self.totalPhotos)")
+                                                                                    }
+                                                                                })
+                                                                            } else {
+                                                                                self.photosComplete += 1
+                                                                                if (self.photosComplete == self.totalPhotos) {
+                                                                                    self.inProgress = false
+                                                                                    complete()
+                                                                                }
+                                                                            }
+                            })
+                        }
+                    }
+                })
+
             }
         })
     }
