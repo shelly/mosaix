@@ -35,7 +35,7 @@ class CreateMosaicViewController: UIViewController {
         
         do {
             try mosaicCreator.setQuality(quality: Int(qualitySliderDefault))
-            try mosaicCreator.setGridSizePoints(gridSizePoints: Int(sizeSliderDefault))
+            try mosaicCreator.setGridSizePoints(Int(sizeSliderDefault))
         }
         catch {
             print("Issue with initial setting of setting quality/grid size points.\n")
@@ -74,7 +74,7 @@ class CreateMosaicViewController: UIViewController {
     @IBAction func sizeChanged(sender: UISlider){
         let value = Int(sender.value)
         do {
-            try mosaicCreator.setGridSizePoints(gridSizePoints: value)
+            try mosaicCreator.setGridSizePoints(value)
         }
         catch {
             print("Error with setting grid size.\n")

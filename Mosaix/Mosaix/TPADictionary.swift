@@ -11,22 +11,22 @@ import Photos
 
 class TPADictionary : TPAStorage {
     
-    private var averages : [PHAsset : TenPointAverage]
+    private var averages : [String : TenPointAverage]
     
     required init() {
         self.averages = [:]
     }
     
-    func insert(asset: PHAsset, tpa: TenPointAverage) {
+    func insert(asset: String, tpa: TenPointAverage) {
         self.averages[asset] = tpa
     }
     
-    func isMember(_ asset: PHAsset) -> Bool {
+    func isMember(_ asset: String) -> Bool {
         return (self.averages[asset] != nil)
     }
     
-    func findNearestMatch(to refTPA: TenPointAverage) -> (closest: PHAsset, diff: Float)? {
-        var bestFit : PHAsset? = nil
+    func findNearestMatch(to refTPA: TenPointAverage) -> (closest: String, diff: Float)? {
+        var bestFit : String? = nil
         var bestDiff : CGFloat = 0.0
         for (asset, assetTPA) in self.averages {
             let diff = assetTPA - refTPA

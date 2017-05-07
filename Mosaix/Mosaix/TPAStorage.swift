@@ -12,9 +12,9 @@ import Photos
 
 protocol TPAStorage {
     init()
-    func insert(asset : PHAsset, tpa: TenPointAverage) -> Void
-    func findNearestMatch(to refTPA: TenPointAverage) -> (closest: PHAsset, diff: Float)?
-    func isMember(_ asset: PHAsset) -> Bool
+    func insert(asset : String, tpa: TenPointAverage) -> Void
+    func findNearestMatch(to refTPA: TenPointAverage) -> (closest: String, diff: Float)?
+    func isMember(_ asset: String) -> Bool
     func toString() -> String
     static func fromString(storageString : String) -> TPAStorage?
 }
