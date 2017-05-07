@@ -15,6 +15,7 @@ enum LibraryProcessingError: Error {
 }
 
 protocol PhotoProcessor {
+    init(timer: MosaicCreationTimer)
     func preprocess(complete : @escaping () -> Void) throws -> Void
     func preprocessProgress() -> Int
     

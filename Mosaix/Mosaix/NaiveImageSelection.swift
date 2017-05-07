@@ -26,7 +26,7 @@ class NaiveImageSelection: ImageSelection {
     private var imageManager : PHImageManager
     private var skipSize : Int
     
-    required init(refImage: UIImage) {
+    required init(refImage: UIImage, timer: MosaicCreationTimer) {
         self.referenceImage = refImage
         self.referencePixelData = self.referenceImage.cgImage!.dataProvider!.data!
         self.imageManager = PHImageManager()

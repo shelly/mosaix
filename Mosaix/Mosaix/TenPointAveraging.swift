@@ -203,12 +203,14 @@ class TenPointAveraging: PhotoProcessor {
     private var totalPhotos : Int
     private var photosComplete : Int
     private static var metal : MetalPipeline? = nil
+    private var timer : MosaicCreationTimer
     
-    init() {
+    required init(timer: MosaicCreationTimer) {
         self.inProgress = false
         self.storage = KDTree()
         self.totalPhotos = 0
         self.photosComplete = 0
+        self.timer = timer
         if (TenPointAveraging.imageManager == nil) {
             TenPointAveraging.imageManager = PHImageManager()
         }
@@ -222,20 +224,23 @@ class TenPointAveraging: PhotoProcessor {
             throw LibraryProcessingError.PreprocessingInProgress
         }
         self.inProgress = true
-        
+        let step = timer.task("TPA Preprocessing")
         DispatchQueue.global(qos: .background).async {
             self.loadStorageFromFile()
+            step("Loading from file.")
             PHPhotoLibrary.requestAuthorization { (status) in
                 switch status {
                 case .authorized:
                     let userAlbumsOptions = PHFetchOptions()
                     userAlbumsOptions.predicate = NSPredicate(format: "estimatedAssetCount > 0")
                     let userAlbums = PHAssetCollection.fetchAssetCollections(with: PHAssetCollectionType.album, subtype: PHAssetCollectionSubtype.albumSyncedAlbum, options: userAlbumsOptions)
-
+                    step("Fetching albums.")
                     self.processAllPhotos(userAlbums: userAlbums, complete: {(changed: Bool) -> Void in
+                        step("Processing photos")
                         //Save to file
                         if (changed) {
                             self.saveStorageToFile()
+                            step("Saving to file.")
                         }
                         DispatchQueue.main.async {
                             complete()
@@ -257,10 +262,9 @@ class TenPointAveraging: PhotoProcessor {
 
     private func processAllPhotos(userAlbums: PHFetchResult<PHAssetCollection>, complete: @escaping (_ changed: Bool) -> Void) {
         var changed: Bool = false
-        userAlbums.enumerateObjects({(collection: PHAssetCollection, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
+        userAlbums.enumerateObjects({(collection: PHAssetCollection, albumIndex: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             stop.pointee = true
             let options = PHFetchOptions()
-            options.fetchLimit = 6001
             let fetchResult = PHAsset.fetchAssets(in: collection, options: options)
             self.totalPhotos = fetchResult.count
             self.photosComplete = 0

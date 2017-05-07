@@ -39,6 +39,7 @@ class MosaicCreator {
     private var _gridSizePoints : Int
     private var _quality : Int = (MosaicCreationConstants.qualityMax + MosaicCreationConstants.qualityMin)/2
     private let compositeContext: CGContext
+    private var timer : MosaicCreationTimer
     
     private var totalGridSpaces : Int
     private var gridSpacesFilled : Int
@@ -53,7 +54,8 @@ class MosaicCreator {
     init(reference: UIImage) {
         self.state = .NotStarted
         self.reference = reference
-        self.imageSelector = MetalImageSelection(refImage: reference)
+        self.timer = MosaicCreationTimer(enabled: true)
+        self.imageSelector = MetalImageSelection(refImage: reference, timer: self.timer)
         
         self.totalGridSpaces = 0
         self.gridSpacesFilled = 0
@@ -133,6 +135,7 @@ class MosaicCreator {
             if (self.gridSpacesFilled == self.totalGridSpaces) {
                     self.state = .Complete
                     complete()
+                    self.timer.report()
             } else {
                 tick()
             }

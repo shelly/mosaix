@@ -35,25 +35,31 @@ class MetalImageSelection: ImageSelection {
     private var imageManager : PHImageManager
     private var skipSize : Int
     private var tpa : TenPointAveraging
+    private var timer: MosaicCreationTimer
     
-    required init(refImage: UIImage) {
+    required init(refImage: UIImage, timer: MosaicCreationTimer) {
         self.state = .NotStarted
         self.referenceImage = refImage
         self.refCGImage = refImage.cgImage!
         self.imageManager = PHImageManager()
         self.allPhotos = nil
         self.skipSize = 0
-        self.tpa = TenPointAveraging()
+        self.tpa = TenPointAveraging(timer: timer)
+        self.timer = timer
     }
     
     private func findBestMatch(row: Int, col: Int, refRegion: CGRect, onSelect : @escaping (ImageChoice) -> Void) {
+        var step : ((String) -> Void)? = nil
+        if (row == 0 && col == 0) {
+            step = self.timer.task("Finding Best Match (\(row), \(col))")
+        }
         let croppedImage : CGImage? = self.refCGImage.cropping(to: refRegion)
-//        print("attempted to crop to \(refRegion) \t from \(self.refCGImage.width)x\(self.refCGImage.height)")
+        step?("cropping image")
         if croppedImage != nil {
             self.tpa.processPhoto(image: croppedImage!, complete: {(refTPA) -> Void in
-    //            print("(\(row), \(col)) -> \(refTPA!.gridAvg)")
+                step?("finding ten-point average")
                 let (bestFit, bestDiff) = self.tpa.findNearestMatch(tpa: refTPA!)!
-                
+                step?("finding nearest match")
                 let targetSize = CGSize(width: refRegion.width, height: refRegion.height)
                 let options = PHImageRequestOptions()
                 let chosenAsset = PHAsset.fetchAssets(withLocalIdentifiers: [bestFit], options: PHFetchOptions()).firstObject!
@@ -61,7 +67,9 @@ class MetalImageSelection: ImageSelection {
                                                resultHandler: {(result, info) -> Void in
                                                 let choiceRegion = CGRect(x: 0, y: 0, width: Int(refRegion.width), height: Int(refRegion.height))
                                                 let choice = ImageChoice(position: (row:row,col:col), image: result!, region: choiceRegion, fit: bestDiff)
+                                                step?("fetching scaled image data")
                                                 onSelect(choice)
+                                                step?("drawing on canvas")
                 })
             })
         } else {
