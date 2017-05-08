@@ -20,6 +20,6 @@ protocol PhotoProcessor {
     func preprocessProgress() -> Int
     
     func findNearestMatch(tpa: TenPointAverage) -> (String, Float)?
-    func processPhoto(image: CGImage, complete: @escaping (TenPointAverage?) throws -> Void) -> Void
+    func processPhoto(image: CGImage, synchronous: Bool, complete: @escaping (TenPointAverage?) throws -> Void) -> Void
     func progress() -> Int
 }

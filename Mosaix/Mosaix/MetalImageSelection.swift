@@ -56,7 +56,7 @@ class MetalImageSelection: ImageSelection {
         let croppedImage : CGImage? = self.refCGImage.cropping(to: refRegion)
         step?("cropping image")
         if croppedImage != nil {
-            self.tpa.processPhoto(image: croppedImage!, complete: {(refTPA) -> Void in
+            self.tpa.processPhoto(image: croppedImage!, synchronous: false, complete: {(refTPA) -> Void in
                 step?("finding ten-point average")
                 let (bestFit, bestDiff) = self.tpa.findNearestMatch(tpa: refTPA!)!
                 step?("finding nearest match")
@@ -99,10 +99,9 @@ class MetalImageSelection: ImageSelection {
             throw MetalSelectionError.InvalidProcessingState
         }
         print("Finding best matches...")
-        
         let numRows : Int = Int(self.referenceImage.size.height) / gridSizePoints
         let numCols : Int = Int(self.referenceImage.size.width) / gridSizePoints
-        let numThreads : Int = 32
+        let numThreads : Int = 128
         
         for threadId in 0 ..< numThreads {
             DispatchQueue.global(qos: .background).async {

@@ -39,7 +39,7 @@ class MosaicCreator {
     private var _gridSizePoints : Int
     private var _quality : Int = (MosaicCreationConstants.qualityMax + MosaicCreationConstants.qualityMin)/2
     private let compositeContext: CGContext
-    private var timer : MosaicCreationTimer
+    var timer : MosaicCreationTimer
     
     private var totalGridSpaces : Int
     private var gridSpacesFilled : Int
@@ -116,7 +116,7 @@ class MosaicCreator {
         guard (self.state == .PreprocessingComplete) else {
             throw MosaicCreationError.InvalidState
         }
-        
+        let step = self.timer.task("Photo Mosaic Generation")
         print("Beginning Mosaic generation")
         self.state = .InProgress
         self.totalGridSpaces = (Int(self.reference.size.width) / self._gridSizePoints) * (Int(self.reference.size.height) / self._gridSizePoints)
@@ -134,6 +134,7 @@ class MosaicCreator {
             UIGraphicsPopContext()
             if (self.gridSpacesFilled == self.totalGridSpaces) {
                     self.state = .Complete
+                    step("Complete")
                     complete()
                     self.timer.report()
             } else {

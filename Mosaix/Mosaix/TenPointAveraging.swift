@@ -171,7 +171,7 @@ class MetalPipeline {
         return texture
     }
     
-    func processImageTexture(texture: MTLTexture, complete : @escaping ([UInt32]) -> Void) {
+    func processImageTexture(texture: MTLTexture, synchronous: Bool, complete : @escaping ([UInt32]) -> Void) {
         let commandBuffer = self.commandQueue.makeCommandBuffer()
         let commandEncoder = commandBuffer.makeComputeCommandEncoder()
         commandEncoder.setComputePipelineState(self.pipelineState!)
@@ -181,7 +181,7 @@ class MetalPipeline {
         let resultBuffer = self.device.makeBuffer(length: bufferLength)
         commandEncoder.setBuffer(resultBuffer, offset: 0, at: 0)
         let gridSize : MTLSize = MTLSize(width: 9, height: 1, depth: 1)
-        let threadGroupSize : MTLSize = MTLSize(width: 512, height: 1, depth: 1)
+        let threadGroupSize : MTLSize = MTLSize(width: 32, height: 1, depth: 1)
         commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
         commandEncoder.endEncoding()
         commandBuffer.addCompletedHandler({(buffer) -> Void in
@@ -190,7 +190,9 @@ class MetalPipeline {
             complete(results)
         })
         commandBuffer.commit()
-        commandBuffer.waitUntilCompleted()
+        if (synchronous) {
+            commandBuffer.waitUntilCompleted()
+        }
     }
 }
 
@@ -274,8 +276,6 @@ class TenPointAveraging: PhotoProcessor {
                 if (self.photosComplete == self.totalPhotos) {
                     self.inProgress = false
                     complete(changed)
-                } else if (self.photosComplete % 20 == 0) {
-                    print("\(self.photosComplete)/\(self.totalPhotos)")
                 }
             }
             
@@ -290,7 +290,7 @@ class TenPointAveraging: PhotoProcessor {
                         TenPointAveraging.imageManager?.requestImage(for: asset, targetSize: PHImageManagerMaximumSize, contentMode: PHImageContentMode.default, options: options,
                                  resultHandler: {(result, info) -> Void in
                                     if (result != nil) {
-                                        self.processPhoto(image: result!.cgImage!, complete: {(tpa) -> Void in
+                                        self.processPhoto(image: result!.cgImage!, synchronous: true, complete: {(tpa) -> Void in
                                             if (tpa != nil) {
                                                 self.storage.insert(asset: asset.localIdentifier, tpa: tpa!)
                                             }
@@ -308,7 +308,7 @@ class TenPointAveraging: PhotoProcessor {
         })
     }
     
-    func processPhoto(image: CGImage, complete: @escaping (TenPointAverage?) throws -> Void) -> Void {
+    func processPhoto(image: CGImage, synchronous: Bool, complete: @escaping (TenPointAverage?) throws -> Void) -> Void {
         //Computes the average
         var texture : MTLTexture? = nil
         do {
@@ -322,7 +322,7 @@ class TenPointAveraging: PhotoProcessor {
             }
         }
         if (texture != nil) {
-            TenPointAveraging.metal?.processImageTexture(texture: texture!, complete: {(result : [UInt32]) -> Void in
+            TenPointAveraging.metal?.processImageTexture(texture: texture!, synchronous: synchronous, complete: {(result : [UInt32]) -> Void in
                 let tba = TenPointAverage()
                 for i in 0 ..< 3 {
                     for j in 0  ..< 3 {
@@ -348,7 +348,7 @@ class TenPointAveraging: PhotoProcessor {
     }
     
     func progress() -> Int {
-        return 0 //TODO 
+        return 0 //TODO
     }
     
     //File Management
