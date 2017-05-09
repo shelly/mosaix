@@ -128,3 +128,10 @@ kernel void findPhotoNinePointAverage(
         result[squareIndex * 3 + 2] = uint(sum.b);
     }
 }
+
+kernel void findNearestMatches(
+
+) {
+    
+}
+

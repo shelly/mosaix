@@ -198,15 +198,13 @@ class MetalPipeline {
         }
     }
     
-    func processEntirePhotoTexture(texture: MTLTexture, synchronous: Bool, gridSize: Int, threadWidth: Int, complete: @escaping ([UInt32]) -> Void) {
+    func processEntirePhotoTexture(texture: MTLTexture, synchronous: Bool, gridSize: Int,  numGridSpaces: Int, threadWidth: Int, complete: @escaping ([UInt32]) -> Void) {
         
         
         let commandBuffer = self.commandQueue.makeCommandBuffer()
         let commandEncoder = commandBuffer.makeComputeCommandEncoder()
         commandEncoder.setComputePipelineState(self.photoPipelineState!)
         commandEncoder.setTexture(texture, at: 0)
-        
-        let numGridSquares = (texture.width/gridSize * texture.height/gridSize)
         if (texture.width % gridSize != 0 || texture.height % gridSize != 0) {
             print("oh poopy")
         }
@@ -219,7 +217,8 @@ class MetalPipeline {
         commandEncoder.setBuffer(paramBuffer, offset: 0, at: 0)
         
         
-        let bufferCount = 3 * 9 * numGridSquares
+        print("num grid squares: \(numGridSpaces)")
+        let bufferCount = 3 * 9 * numGridSpaces
         let bufferLength = MemoryLayout<UInt32>.size * bufferCount
         let resultBuffer = self.device.makeBuffer(length: bufferLength)
         commandEncoder.setBuffer(resultBuffer, offset: 0, at: 1)
