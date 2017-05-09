@@ -118,15 +118,19 @@ class MetalPipeline {
     let commandQueue : MTLCommandQueue
     let library: MTLLibrary
     let NinePointAverage : MTLFunction
+    let PhotoNinePointAverage : MTLFunction
     var pipelineState : MTLComputePipelineState? = nil
+    var photoPipelineState : MTLComputePipelineState? = nil
     
     init() {
         self.device = MTLCreateSystemDefaultDevice()!
         self.commandQueue = self.device.makeCommandQueue()
         self.library = self.device.newDefaultLibrary()!
         self.NinePointAverage = self.library.makeFunction(name: "findNinePointAverage")!
+        self.PhotoNinePointAverage = self.library.makeFunction(name: "findPhotoNinePointAverage")!
         do {
             self.pipelineState = try self.device.makeComputePipelineState(function: self.NinePointAverage)
+            self.photoPipelineState = try self.device.makeComputePipelineState(function: self.PhotoNinePointAverage)
         } catch {
             print("Error initializing pipeline state!")
         }
@@ -193,6 +197,47 @@ class MetalPipeline {
             commandBuffer.waitUntilCompleted()
         }
     }
+    
+    func processEntirePhotoTexture(texture: MTLTexture, synchronous: Bool, gridSize: Int, threadWidth: Int, complete: @escaping ([UInt32]) -> Void) {
+        
+        
+        let commandBuffer = self.commandQueue.makeCommandBuffer()
+        let commandEncoder = commandBuffer.makeComputeCommandEncoder()
+        commandEncoder.setComputePipelineState(self.photoPipelineState!)
+        commandEncoder.setTexture(texture, at: 0)
+        
+        let numGridSquares = (texture.width/gridSize * texture.height/gridSize)
+        if (texture.width % gridSize != 0 || texture.height % gridSize != 0) {
+            print("oh poopy")
+        }
+        
+        let paramBufferLength = MemoryLayout<UInt32>.size * 1;
+        let options = MTLResourceOptions()
+        let params = UnsafeMutableRawPointer.allocate(bytes: MemoryLayout<UInt32>.size, alignedTo: 1)
+        params.storeBytes(of: UInt32(gridSize), as: UInt32.self)
+        let paramBuffer = self.device.makeBuffer(bytes: params, length: paramBufferLength, options: options)
+        commandEncoder.setBuffer(paramBuffer, offset: 0, at: 0)
+        
+        
+        let bufferCount = 3 * 9 * numGridSquares
+        let bufferLength = MemoryLayout<UInt32>.size * bufferCount
+        let resultBuffer = self.device.makeBuffer(length: bufferLength)
+        commandEncoder.setBuffer(resultBuffer, offset: 0, at: 1)
+        
+        let gridSize : MTLSize = MTLSize(width: 9, height: 1, depth: 1)
+        let threadGroupSize : MTLSize = MTLSize(width: threadWidth, height: 1, depth: 1)
+        commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
+        commandEncoder.endEncoding()
+        commandBuffer.addCompletedHandler({(buffer) -> Void in
+            let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: bufferCount))
+            //            print("\(results)")
+            complete(results)
+        })
+        commandBuffer.commit()
+        if (synchronous) {
+            commandBuffer.waitUntilCompleted()
+        }
+    }
 }
 
 class TenPointAveraging: PhotoProcessor {
@@ -201,7 +246,7 @@ class TenPointAveraging: PhotoProcessor {
     private static var imageManager : PHImageManager?
     private var totalPhotos : Int
     private var photosComplete : Int
-    private static var metal : MetalPipeline? = nil
+    static var metal : MetalPipeline? = nil
     private var timer : MosaicCreationTimer
     var threadWidth : Int = 1
     
