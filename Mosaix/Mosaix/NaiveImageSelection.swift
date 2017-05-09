@@ -20,6 +20,8 @@ enum NaiveSelectionError: Error {
 }
 
 class NaiveImageSelection: ImageSelection {
+    var tpa: TenPointAveraging
+    var numThreads : Int
     private var referenceImage : UIImage
     private var referencePixelData : CFData
     private var allPhotos : PHFetchResult<PHAsset>?
@@ -27,11 +29,13 @@ class NaiveImageSelection: ImageSelection {
     private var skipSize : Int
     
     required init(refImage: UIImage, timer: MosaicCreationTimer) {
+        self.tpa = TenPointAveraging(timer: timer)
         self.referenceImage = refImage
         self.referencePixelData = self.referenceImage.cgImage!.dataProvider!.data!
         self.imageManager = PHImageManager()
         self.allPhotos = nil
         self.skipSize = 0
+        self.numThreads = 1
         PHPhotoLibrary.requestAuthorization { (status) in
             switch status {
                 case .authorized:

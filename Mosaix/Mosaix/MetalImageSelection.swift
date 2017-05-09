@@ -34,7 +34,8 @@ class MetalImageSelection: ImageSelection {
     private var allPhotos : PHFetchResult<PHAsset>?
     private var imageManager : PHImageManager
     private var skipSize : Int
-    private var tpa : TenPointAveraging
+    var tpa : TenPointAveraging
+    var numThreads : Int
     private var timer: MosaicCreationTimer
     
     required init(refImage: UIImage, timer: MosaicCreationTimer) {
@@ -46,6 +47,7 @@ class MetalImageSelection: ImageSelection {
         self.skipSize = 0
         self.tpa = TenPointAveraging(timer: timer)
         self.timer = timer
+        self.numThreads = 32
     }
     
     private func findBestMatch(row: Int, col: Int, refRegion: CGRect, onSelect : @escaping (ImageChoice) -> Void) {
@@ -98,14 +100,13 @@ class MetalImageSelection: ImageSelection {
         guard (self.state == .PreprocessingComplete) else {
             throw MetalSelectionError.InvalidProcessingState
         }
-        print("Finding best matches...")
+//        print("Finding best matches...")
         let numRows : Int = Int(self.referenceImage.size.height) / gridSizePoints
         let numCols : Int = Int(self.referenceImage.size.width) / gridSizePoints
-        let numThreads : Int = 128
         
         for threadId in 0 ..< numThreads {
             DispatchQueue.global(qos: .background).async {
-                for i in stride(from: threadId, to: numRows * numCols, by: numThreads) {
+                for i in stride(from: threadId, to: numRows * numCols, by: self.numThreads) {
                     let row = i / numCols
                     let col = i % numCols
                     let x = col * gridSizePoints

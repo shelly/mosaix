@@ -81,13 +81,12 @@ class TenPointAverage : NSObject, NSCoding {
     
     static func -(left: TenPointAverage, right: TenPointAverage) -> CGFloat {
         var diff : CGFloat = 0.0
-        diff += abs(left.totalAvg - right.totalAvg)
         for row in 0..<TenPointAverageConstants.rows {
             for col in 0..<TenPointAverageConstants.cols {
-                diff += abs(left.gridAvg[row][col] - right.gridAvg[row][col])
+                diff += pow(abs(left.gridAvg[row][col] - right.gridAvg[row][col]), 2)
             }
         }
-        return diff
+        return sqrt(diff)
     }
     
     static func ==(left: TenPointAverage, right: TenPointAverage) -> Bool {
@@ -171,7 +170,7 @@ class MetalPipeline {
         return texture
     }
     
-    func processImageTexture(texture: MTLTexture, synchronous: Bool, complete : @escaping ([UInt32]) -> Void) {
+    func processImageTexture(texture: MTLTexture, synchronous: Bool, threadWidth: Int, complete : @escaping ([UInt32]) -> Void) {
         let commandBuffer = self.commandQueue.makeCommandBuffer()
         let commandEncoder = commandBuffer.makeComputeCommandEncoder()
         commandEncoder.setComputePipelineState(self.pipelineState!)
@@ -181,7 +180,7 @@ class MetalPipeline {
         let resultBuffer = self.device.makeBuffer(length: bufferLength)
         commandEncoder.setBuffer(resultBuffer, offset: 0, at: 0)
         let gridSize : MTLSize = MTLSize(width: 9, height: 1, depth: 1)
-        let threadGroupSize : MTLSize = MTLSize(width: 32, height: 1, depth: 1)
+        let threadGroupSize : MTLSize = MTLSize(width: threadWidth, height: 1, depth: 1)
         commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
         commandEncoder.endEncoding()
         commandBuffer.addCompletedHandler({(buffer) -> Void in
@@ -197,8 +196,6 @@ class MetalPipeline {
 }
 
 class TenPointAveraging: PhotoProcessor {
-
-    
     private var inProgress : Bool
     private var storage : TPAStorage
     private static var imageManager : PHImageManager?
@@ -206,6 +203,7 @@ class TenPointAveraging: PhotoProcessor {
     private var photosComplete : Int
     private static var metal : MetalPipeline? = nil
     private var timer : MosaicCreationTimer
+    var threadWidth : Int = 1
     
     required init(timer: MosaicCreationTimer) {
         self.inProgress = false
@@ -267,12 +265,14 @@ class TenPointAveraging: PhotoProcessor {
         userAlbums.enumerateObjects({(collection: PHAssetCollection, albumIndex: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             stop.pointee = true
             let options = PHFetchOptions()
+//            options.fetchLimit = 1000
             let fetchResult = PHAsset.fetchAssets(in: collection, options: options)
             self.totalPhotos = fetchResult.count
             self.photosComplete = 0
             
             func step() {
                 self.photosComplete += 1
+//                print("\(self.photosComplete)/\(self.totalPhotos)")
                 if (self.photosComplete == self.totalPhotos) {
                     self.inProgress = false
                     complete(changed)
@@ -281,7 +281,6 @@ class TenPointAveraging: PhotoProcessor {
             
             fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
                 if (asset.mediaType == .image && !self.storage.isMember(asset.localIdentifier)) {
-
                     //Asynchronously grab image and save the values.
                     changed = true
                     let options = PHImageRequestOptions()
@@ -322,7 +321,7 @@ class TenPointAveraging: PhotoProcessor {
             }
         }
         if (texture != nil) {
-            TenPointAveraging.metal?.processImageTexture(texture: texture!, synchronous: synchronous, complete: {(result : [UInt32]) -> Void in
+            TenPointAveraging.metal?.processImageTexture(texture: texture!, synchronous: synchronous, threadWidth: self.threadWidth, complete: {(result : [UInt32]) -> Void in
                 let tba = TenPointAverage()
                 for i in 0 ..< 3 {
                     for j in 0  ..< 3 {

@@ -33,7 +33,7 @@ struct MosaicCreationConstants {
 
 class MosaicCreator {
     
-    private let imageSelector : ImageSelection
+    var imageSelector : ImageSelection
     private let reference : UIImage
     private var state : MosaicCreationState
     private var _gridSizePoints : Int
@@ -113,30 +113,30 @@ class MosaicCreator {
     }
     
     func begin(tick : @escaping () -> Void, complete : @escaping () -> Void) throws -> Void {
-        guard (self.state == .PreprocessingComplete) else {
+        guard (self.state == .PreprocessingComplete || self.state == .Complete) else {
             throw MosaicCreationError.InvalidState
         }
         let step = self.timer.task("Photo Mosaic Generation")
-        print("Beginning Mosaic generation")
+//        print("Beginning Mosaic generation")
         self.state = .InProgress
         self.totalGridSpaces = (Int(self.reference.size.width) / self._gridSizePoints) * (Int(self.reference.size.height) / self._gridSizePoints)
         self.gridSpacesFilled = 0
         try self.imageSelector.select(gridSizePoints: self._gridSizePoints, quality: self._quality, onSelect: {(choice: ImageChoice) in
             self.gridSpacesFilled += 1
-            UIGraphicsPushContext(self.compositeContext)
-                
-            let drawRect = CGRect(x: choice.position.col * Int(self._gridSizePoints) + Int(choice.region.minX),
-                                      y: choice.position.row * Int(self._gridSizePoints) + Int(choice.region.minY),
-                                      width: Int(choice.region.width), height: Int(choice.region.height))
-
-            
-            choice.image.draw(in: drawRect)
-            UIGraphicsPopContext()
+//            UIGraphicsPushContext(self.compositeContext)
+//                
+//            let drawRect = CGRect(x: choice.position.col * Int(self._gridSizePoints) + Int(choice.region.minX),
+//                                      y: choice.position.row * Int(self._gridSizePoints) + Int(choice.region.minY),
+//                                      width: Int(choice.region.width), height: Int(choice.region.height))
+//
+//            
+//            choice.image.draw(in: drawRect)
+//            UIGraphicsPopContext()
             if (self.gridSpacesFilled == self.totalGridSpaces) {
                     self.state = .Complete
                     step("Complete")
+                    self.timer.complete(report: true)
                     complete()
-                    self.timer.report()
             } else {
                 tick()
             }

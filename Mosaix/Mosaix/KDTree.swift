@@ -71,17 +71,12 @@ private class KDNode: NSObject, NSCoding {
     }
 }
 
-enum TPAComparison {
-    case less
-    case equal
-    case greater
-}
-
 class KDTree : NSObject, NSCoding, TPAStorage {
 
     public var pListPath = "kdtree.plist"
     private var root : KDNode? = nil
     private var assets : Set<String>
+    var quality: Int = 100
     
     required override init() {
         self.assets = []
@@ -95,35 +90,31 @@ class KDTree : NSObject, NSCoding, TPAStorage {
     /**
      * Given the local identifier for a photo and the ten-point average struct (and a root node), this 
      * recursively inserts a new node containing this information below the given node. Note that 
-     * the data structure is not self-balancing and relies on probability for expected logarithmic 
+     * the data structure is not self-balancing and relies on probability for expected logarithmic
      * insertions and accesses.
      */
     private func insert(_ asset: String, _ tpa: TenPointAverage, at node: KDNode?, level: Int) -> KDNode {
         if (node == nil) {
             self.assets.insert(asset)
+            var lvlString = ""
+            for _ in 0 ..< level {
+                lvlString.append("*")
+            }
+            print(lvlString)
             return KDNode(tpa: tpa, asset: asset)
         }
         
-        let comparison = self.compareAtLevel(tpa, node!.tpa, atLevel: level)
+        let diff = self.differenceAtLevel(tpa, node!.tpa, atLevel: level)
         
-        if (comparison == TPAComparison.less) {
+        if (diff < 0) {
+//            print("left")
             node!.left = insert(asset, tpa, at: node!.left, level: level + 1)
         } else {
+//            print("right")
             node!.right = insert(asset, tpa, at: node!.right, level: level + 1)
         }
         
         return node!
-    }
-    
-    private func compareAtLevel(_ left: TenPointAverage, _ right: TenPointAverage, atLevel: Int) -> TPAComparison {
-        let difference: Float = self.differenceAtLevel(left, right, atLevel: atLevel)
-        if (difference < 0) {
-            return TPAComparison.less
-        } else if (difference == 0) {
-            return TPAComparison.equal
-        } else {
-            return TPAComparison.greater
-        }
     }
     
     /**
@@ -132,7 +123,7 @@ class KDTree : NSObject, NSCoding, TPAStorage {
      * The result is always non-negative.
      */
     private func distanceAtLevel(_ left: TenPointAverage, _ right: TenPointAverage, atLevel: Int) -> Float {
-        return Float(abs(self.differenceAtLevel(left, right, atLevel: atLevel)))
+        return abs(self.differenceAtLevel(left, right, atLevel: atLevel))
     }
     
     /**
@@ -140,14 +131,36 @@ class KDTree : NSObject, NSCoding, TPAStorage {
      * another of this implementation's 27 axes, we find the grid index and RGB values by the current level and 
      * compare the values of those only.
      */
+//    internal func differenceAtLevel(_ left: TenPointAverage, _ right: TenPointAverage, atLevel: Int) -> Float {
+//        let gridIndex : Int = atLevel % 9
+//        let rgb : Int = (atLevel + (atLevel/3) + (atLevel/9)) % 3
+//        
+//        let leftPixel = left.gridAvg[gridIndex / 3][gridIndex % 3]
+//        let rightPixel = right.gridAvg[gridIndex / 3][gridIndex % 3]
+//        
+//        return Float(leftPixel.get(rgb) - rightPixel.get(rgb))
+//    }
+//
+//    private func differenceAtLevel(_ left: TenPointAverage, _ right: TenPointAverage, atLevel: Int) -> Float {
+//        let gridRow : Int = (atLevel / 3) % 3
+//        let gridCol : Int = atLevel % 3
+////        let nextGridRow : Int = (gridRow + 1) % 3
+////        let nextGridCol : Int = (gridCol + 1) % 3
+//        let diff = Float(left.gridAvg[gridRow][gridCol] - right.gridAvg[gridRow][gridCol])
+//        return diff - 150
+//    }
+
     private func differenceAtLevel(_ left: TenPointAverage, _ right: TenPointAverage, atLevel: Int) -> Float {
-        let gridIndex : Int = atLevel % 9
-        let rgb : Int = (atLevel + (atLevel/3) + (atLevel/9)) % 3
+        let i = atLevel * 2
+        let row0 = (i/3) % 3
+        let row1 = ((i+1)/3) % 3
+        let col0 = i % 3
+        let col1 = (i+1) % 3
         
-        let leftPixel = left.gridAvg[gridIndex / 3][gridIndex % 3]
-        let rightPixel = right.gridAvg[gridIndex / 3][gridIndex % 3]
+        let diff = Float(left.gridAvg[row0][col0] - right.gridAvg[row0][col0]) +
+                   Float(left.gridAvg[row1][col1] - right.gridAvg[row0][col0])
         
-        return Float(leftPixel.get(rgb) - rightPixel.get(rgb))
+        return diff - 400
     }
     
     func isMember(_ asset: String) -> Bool {
@@ -155,7 +168,9 @@ class KDTree : NSObject, NSCoding, TPAStorage {
     }
     
     func findNearestMatch(to refTPA: TenPointAverage) -> (closest: String, diff: Float)? {
-        return self.findNearestMatch(to: refTPA, from: self.root, level: 0)
+        let nearestMatch : (match: (closest: String, diff: Float)?, comparisons : Int) = self.findNearestMatch(to: refTPA, from: self.root, level: 0, radius: nil)
+//        print("KD Tree match: \(nearestMatch.comparisons) comparisons")
+        return nearestMatch.match
     }
     
     /**
@@ -165,40 +180,53 @@ class KDTree : NSObject, NSCoding, TPAStorage {
      *
      * Returns nil if and only if the tree is empty. Otherwise, returns the local identifier of the photo and the 
      * calculated difference (lower is better).
+     *
+     * Adjusted to auto
      */
-    private func findNearestMatch(to refTPA: TenPointAverage, from node: KDNode?, level: Int) -> (closest: String, diff: Float)? {
-        var currentBest : (closest: String, diff: Float)?
+    private func findNearestMatch(to refTPA: TenPointAverage, from node: KDNode?, level: Int, radius: Float?) -> (match: (closest: String, diff: Float)?, comparisons: Int) {
+        var currentBest : (match: (closest: String, diff: Float)?, comparisons: Int)
         
         //Base Case
         if (node == nil) {
-            return nil
+            return (match: nil, comparisons: 0)
         }
         
         //Recursively get best from leaves
-        let comparison = self.compareAtLevel(refTPA, node!.tpa, atLevel: level)
-        if (comparison == TPAComparison.less) {
-            currentBest = self.findNearestMatch(to: refTPA, from: node!.left, level: level + 1)
-        } else {
-            currentBest = self.findNearestMatch(to: refTPA, from: node!.right, level: level + 1)
+        let diffAtLevel = self.distanceAtLevel(refTPA, node!.tpa, atLevel: level)
+        if (radius != nil && diffAtLevel > (radius! * Float(self.quality) / 100.0)) {
+            return (match: nil, comparisons: 1)
         }
+        
+        
+        if (diffAtLevel < 0) {
+            currentBest = self.findNearestMatch(to: refTPA, from: node!.left, level: level + 1, radius: nil)
+        } else {
+            currentBest = self.findNearestMatch(to: refTPA, from: node!.right, level: level + 1, radius: nil)
+        }
+        
+        currentBest.comparisons += 1
         
         //Then, on the way back up, see if current node is better.
         let currentDiff : Float = Float(refTPA - node!.tpa)
-        if (currentBest == nil || currentDiff < currentBest!.diff) {
+        if (currentBest.match == nil || currentDiff < currentBest.match!.diff) {
             // Node is better than currentBest
-            currentBest = (closest: node!.asset, diff: currentDiff)
+            currentBest.match = (closest: node!.asset, diff: currentDiff)
         }
         
+        let newRadius = (radius != nil ? min(radius!, currentBest.match!.diff) : currentBest.match!.diff)
+        
         //Now, check to see if the _other_ branch potentially has a closer node.
-        var otherBest : (closest: String, diff: Float)? = nil
-        if (comparison == TPAComparison.less && (currentBest == nil || self.isCloser(refTPA, to: node!.right, than: currentBest!.diff, atLevel: level + 1))) {
-            otherBest = self.findNearestMatch(to: refTPA, from: node!.right, level: level + 1)
-        } else if (comparison == TPAComparison.greater && (currentBest == nil || self.isCloser(refTPA, to: node!.left, than: currentBest!.diff, atLevel: level + 1))) {
-            otherBest = self.findNearestMatch(to: refTPA, from: node!.left, level: level + 1)
+        var otherBest : (match: (closest: String, diff: Float)?, comparisons: Int) = (match: nil, comparisons: 0)
+        
+        if (diffAtLevel < 0) {
+            otherBest = self.findNearestMatch(to: refTPA, from: node!.right, level: level + 1, radius: newRadius)
+        } else if (diffAtLevel > 0) {
+            otherBest = self.findNearestMatch(to: refTPA, from: node!.left, level: level + 1, radius: newRadius)
         }
-        if (otherBest != nil && (currentBest == nil || otherBest!.diff < currentBest!.diff)) {
-            currentBest = otherBest
+        if (otherBest.match != nil && (currentBest.match == nil || otherBest.match!.diff < currentBest.match!.diff)) {
+            currentBest.match = otherBest.match
         }
+        currentBest.comparisons += otherBest.comparisons
         
         return currentBest
     }
@@ -213,8 +241,8 @@ class KDTree : NSObject, NSCoding, TPAStorage {
             return nil
         }
         
-        let leftBest = self.findNearestMatch(to: refTPA, from: node!.left, level: level + 1)
-        let rightBest = self.findNearestMatch(to: refTPA, from: node!.right, level: level + 1)
+        let leftBest = self.findNearestMatchBruteForce(to: refTPA, from: node!.left, level: level + 1)
+        let rightBest = self.findNearestMatchBruteForce(to: refTPA, from: node!.right, level: level + 1)
         let currentDiff : Float = Float(refTPA - node!.tpa)
 
         let leftBetter = leftBest != nil && leftBest!.diff < currentDiff
@@ -243,7 +271,7 @@ class KDTree : NSObject, NSCoding, TPAStorage {
         if (node == nil) {
             return false
         }
-        return self.distanceAtLevel(tpa, node!.tpa, atLevel: atLevel) < diff
+        return self.distanceAtLevel(tpa, node!.tpa, atLevel: atLevel) < (diff*0.5)
     }
     
     //NSCoding

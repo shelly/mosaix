@@ -33,24 +33,26 @@ class MosaicCreationTimer {
     }
     
     func overallTaskTime(for taskIdentifier: String) -> CFAbsoluteTime? {
-        if !self.tasks.contains(taskIdentifier) {
+        if !(self.tasks.index(forKey: taskIdentifier) != nil) {
             return nil
         }
         return self.tasks[taskIdentifier]!.last!.time - self.tasks[taskIdentifier]!.first!.time
     }
     
-    func report() -> Void {
-        print("\nMosaic Creation Tasks:")
-        print("---------------------------------------------------------")
-        print("|             Step                    |   Elapsed Time  |")
-        for (identifier, steps) in self.tasks {
+    func complete(report: Bool) -> Void {
+        if (report) {
+            print("\nMosaic Creation Tasks:")
             print("---------------------------------------------------------")
-            print("| \(identifier)")
-            for (step, _, elapsed) in steps {
-                print(String(format: "| %-35s | %10fs      |", (step as NSString).utf8String!, Float(elapsed)))
+            print("|             Step                    |   Elapsed Time  |")
+            for (identifier, steps) in self.tasks {
+                print("---------------------------------------------------------")
+                print("| \(identifier)")
+                for (step, _, elapsed) in steps {
+                    print(String(format: "| %-35s | %10fs      |", (step as NSString).utf8String!, Float(elapsed)))
+                }
             }
+            print("---------------------------------------------------------")
         }
-        print("---------------------------------------------------------")
         self.tasks = [:]
     }
 }
@@ -76,34 +78,40 @@ class MosaicBenchmarker {
     }
     
     func addVariable(name: String, next: @escaping (() -> Any?)) {
+        print("Adding variable \(name)")
         self.variables[name] = next
     }
     
-    func begin() throws -> Void {
+    func begin(tick: @escaping () -> Void, complete: @escaping () -> Void) throws -> Void {
         //Initialize all conditions and variablesdffd
         try self.creator.preprocess(complete: {() -> Void in
             for (_, next) in self.conditions {
                 _ = next()
             }
-            self.optimizeUnderCurrentConditions()
+            self.optimizeUnderCurrentConditions(tick: tick, complete: complete)
         })
     }
     
-    func optimizeUnderCurrentConditions() -> Void {
+    func optimizeUnderCurrentConditions(tick: @escaping () -> Void, complete: () -> Void) -> Void {
         
         let numTrials : Int = 5
+        var trialNum : Int = 1
+        var avgTime : CFAbsoluteTime = 0
         
-        func runNextTrial(_ trialNum: Int, varName: String, complete: @escaping (CFAbsoluteTime) -> Void) -> Void {
-            print("    Running trial \(trialNum)/\(numTrials)")
+        func runNextTrial(varName: String, complete: @escaping () -> Void) -> Void {
             if (trialNum > numTrials) {
                 //finish up
-                complete(0)
+                complete()
             } else {
+//                print("    Running trial \(trialNum)/\(numTrials)")
                 do {
-                    try self.creator.begin(tick: {() -> Void in return}, complete: {() -> Void in
-                        let trialTime = self.creator.timer.overallTaskTime(for: "Mosaic Photo Generation")
-                        runNextTrial(trialNum + 1, varName: varName, complete: {(sumTime : CFAbsoluteTime) -> Void in
-                            complete(sumTime + trialTime/numTrials)
+                    try self.creator.begin(tick: tick, complete: {() -> Void in
+                        let trialTime = self.creator.timer.overallTaskTime(for: "Photo Mosaic Generation")
+//                        print("      Trial \(trialNum) took \(trialTime!)s")
+                        trialNum += 1
+                        avgTime += trialTime! / Double(numTrials)
+                        runNextTrial(varName: varName, complete: {() -> Void in
+                            complete()
                         })
                     })
                 } catch {
@@ -112,28 +120,31 @@ class MosaicBenchmarker {
             }
         }
         
-        func trialNextVariable(varName: String, next: () -> Any?, complete: () -> Void) -> Void {
+        func trialNextVariable(varName: String, next: @escaping () -> Any?, complete: @escaping () -> Void) -> Void {
             let varVal = next()
             if (varVal == nil) {
                 //finish up
                 print("  Finished trialing \(varName)")
                 complete()
             } else {
-                print("  Set \(varName)=\(varVal!)")
-                runNextTrial(1, varName: varName, complete: {(avgTime: CFAbsoluteTime) -> Void in
-                    print("    Took \(avgTime)s")
+                print("  Set \(varName) = \(varVal!)")
+                trialNum = 1
+                avgTime = 0
+                runNextTrial(varName: varName, complete: {() -> Void in
+                    print("    Average time: \(avgTime)s")
                     trialNextVariable(varName: varName, next: next, complete: complete)
                 })
             }
         }
         
         var varIt = self.variables.makeIterator()
+        print("\(self.variables.count)")
         
         func optimizeNextVariable() {
-            let nextVar : (name: String, next: (() -> Any?))? = varIt.next() as? (name: String, next: (() -> Any?))
-            print("Now optimizing for \(nextVar!.name).")
+            let nextVar = varIt.next()
             if (nextVar != nil) {
-                trialNextVariable(varName: nextVar!.name, next: nextVar!.next, complete: {() -> Void in
+                print("Now optimizing for \(nextVar!.key).")
+                trialNextVariable(varName: nextVar!.key, next: nextVar!.value, complete: {() -> Void in
                     optimizeNextVariable()
                 })
             }
