@@ -20,10 +20,17 @@ We created an iOS application which uses the Metal framework to generate photo m
 ______
 Our application is a Swift mobile app with a fairly simple user interface; the user selects the desired image (referred to as the _reference photo_) and adjusts the grid size and quality. At this point, the application reassembles the selected image (into the _composite photo_) of the other images in the users' libraries, presenting the user with the _composite_ as a final result.
 
-There were two main algorithms we parallelized - 1) generating a reasonable representation of photos within the Photo Library so that we can efficiently detect what the best match for a particular subsection of our reference photo is, and 2), breaking down the reference photo into sections and choosing a single "best" image to represent each section in the composite image.
+Our goal was to implement a reasonable approach to transforming photos into a feature vector, apply this transformation efficiently to the entire Photo Library, and then find the minimum difference between the vector of a subsection of our reference photo and the vector of some photo from the photo library so that we can replace it. 
+
+There were two main algorithms we parallelized.
+_1) Generating a reasonable representation of photos within the Photo Library so that we can efficiently detect what the best match for a particular subsection of our reference photo is._
+
+We did this with a technique we called Ten Point Averaging (derivative of a nine point average system), which split each library photo into a 3x3 grid and found the average R, G, and B values in each subsection, as well as the average R, G, and B values for the entire image. We then created a 30-dimensional feature vector of these 10 numbers x 3 channels, and considered this our representation of the image.
+
+_2) Breaking down the reference photo into sections and choosing a single "best" image to represent each section in the composite image._
 
 <!---
-TODO: [WEDS] Add more about our implementation here.  
+TODO: [WEDS] The reduction stuff that I feel ill-qualified to explain! 
 -->
 
 #### Platform Choice & Resources 
@@ -45,7 +52,7 @@ TODO: [BEFORE WEDS] Rewrite to better address what we tried.
 ______
 
 <!---
-TODO: [BEFORE WEDS] Rewrite to better address current approach.
+TODO: [BEFORE FRIDAY] Rewrite to better address current approach.
 -->
  
 ## Results
