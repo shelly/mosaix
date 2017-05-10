@@ -81,3 +81,101 @@ kernel void findNinePointAverage(
         }
     }
 }
+
+kernel void findPhotoNinePointAverage(
+     texture2d<float, access::read> image [[ texture(0) ]],
+     device uint* params [[ buffer(0) ]],
+     device uint* result [[ buffer(1) ]],
+     uint threadId [[ thread_position_in_grid ]],
+     uint numThreads [[ threads_per_grid ]]
+) {
+    
+    const int imageWidth = image.get_width();
+    const int imageHeight = image.get_height();
+    
+    const uint gridSize = params[0];
+    
+    uint gridSquaresInRow = imageWidth / gridSize;
+    uint gridSquaresInCol = imageHeight / gridSize;
+    
+    // The total number of nine-point squares in the entire photo
+    uint ninePointSquares = gridSquaresInRow * gridSquaresInCol * 9;
+    
+    for (uint squareIndex = threadId; squareIndex < ninePointSquares; squareIndex += numThreads) {
+        float4 sum = float4(0.0, 0.0, 0.0, 0.0);
+        
+        uint gridSquareIndex = squareIndex / 9;
+        uint gridSquareX = (gridSquareIndex % gridSquaresInRow) * gridSize;
+        uint gridSquareY = (gridSquareIndex / gridSquaresInRow) * gridSize;
+        
+        uint ninePointIndex = squareIndex % 9;
+        uint ninePointSize = gridSize / 3;
+        uint ninePointX = gridSquareX + (( ninePointIndex % 3) * ninePointSize);
+        uint ninePointY = gridSquareY + (( ninePointIndex / 3) * ninePointSize);
+        
+        for (uint deltaY = 0; deltaY < ninePointSize; deltaY++) {
+            for (uint deltaX = 0; deltaX < ninePointSize; deltaX++) {
+                uint2 coord = uint2(ninePointX + deltaX, ninePointY + deltaY);
+                sum += image.read(coord);
+            }
+        }
+        sum.r = sum.r * 255 / (ninePointSize * ninePointSize);
+        sum.g = sum.g * 255 / (ninePointSize * ninePointSize);
+        sum.b = sum.b * 255 / (ninePointSize * ninePointSize);
+        
+        result[squareIndex * 3 + 0] = uint(sum.r);
+        result[squareIndex * 3 + 1] = uint(sum.g);
+        result[squareIndex * 3 + 2] = uint(sum.b);
+    }
+}
+
+kernel void findNearestMatches(
+    device uint* refTPAs [[ buffer(0) ]],
+    device uint* otherTPAs [[ buffer(1) ]],
+    device uint* result  [[ buffer(2) ]],
+    device uint* params  [[ buffer(3) ]],
+    uint threadId [[ thread_position_in_grid ]],
+    uint numThreads [[ threads_per_grid ]]
+) {
+    const uint pointsPerTPA = 9 * 3;
+    uint refTPACount = params[0] / pointsPerTPA;
+    uint otherTPACount = params[1] / pointsPerTPA;
+    
+    for (uint refTPAIndex = threadId; refTPAIndex < refTPACount; refTPAIndex += numThreads) {
+        uint minTPAId = 0;
+        float minDiff = 0.0;
+        for (uint otherIndex = 0; otherIndex < otherTPACount; otherIndex++) {
+            float diff = 0.0;
+            for (uint delta = 0; delta < pointsPerTPA; delta++) {
+                diff += abs(refTPAs[refTPAIndex*pointsPerTPA + delta] - otherTPAs[otherIndex*pointsPerTPA + delta]);
+            }
+            if (minTPAId == 0 || diff < minDiff) {
+                minTPAId = otherIndex;
+                minDiff = diff;
+            }
+        }
+
+        result[refTPAIndex] = minTPAId;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -10,6 +10,7 @@
 		D84014FF1EBCFAA2004A3C44 /* KDTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84014FE1EBCFAA2004A3C44 /* KDTree.swift */; };
 		D84015021EBCFBFE004A3C44 /* TPAStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84015011EBCFBFE004A3C44 /* TPAStorage.swift */; };
 		D84015041EBD0442004A3C44 /* TPADictionary.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84015031EBD0442004A3C44 /* TPADictionary.swift */; };
+		D84135C81EC26E4000500CAD /* TPAArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84135C71EC26E4000500CAD /* TPAArray.swift */; };
 		D86AD3701EA6BF5100E374BD /* TenPointAveraging.swift in Sources */ = {isa = PBXBuildFile; fileRef = D86AD36F1EA6BF5100E374BD /* TenPointAveraging.swift */; };
 		D86AD3721EA6BF5B00E374BD /* PhotoProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D86AD3711EA6BF5B00E374BD /* PhotoProcessor.swift */; };
 		D86AD3741EA7D65C00E374BD /* TenPointAveraging.metal in Sources */ = {isa = PBXBuildFile; fileRef = D86AD3731EA7D65C00E374BD /* TenPointAveraging.metal */; };
@@ -52,6 +53,7 @@
 		D84014FE1EBCFAA2004A3C44 /* KDTree.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KDTree.swift; sourceTree = "<group>"; };
 		D84015011EBCFBFE004A3C44 /* TPAStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TPAStorage.swift; sourceTree = "<group>"; };
 		D84015031EBD0442004A3C44 /* TPADictionary.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TPADictionary.swift; sourceTree = "<group>"; };
+		D84135C71EC26E4000500CAD /* TPAArray.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TPAArray.swift; sourceTree = "<group>"; };
 		D86AD36F1EA6BF5100E374BD /* TenPointAveraging.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TenPointAveraging.swift; sourceTree = "<group>"; };
 		D86AD3711EA6BF5B00E374BD /* PhotoProcessor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoProcessor.swift; sourceTree = "<group>"; };
 		D86AD3731EA7D65C00E374BD /* TenPointAveraging.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = TenPointAveraging.metal; sourceTree = "<group>"; };
@@ -110,6 +112,7 @@
 				D84014FE1EBCFAA2004A3C44 /* KDTree.swift */,
 				D84015011EBCFBFE004A3C44 /* TPAStorage.swift */,
 				D84015031EBD0442004A3C44 /* TPADictionary.swift */,
+				D84135C71EC26E4000500CAD /* TPAArray.swift */,
 			);
 			name = TPAStorage;
 			sourceTree = "<group>";
@@ -356,6 +359,7 @@
 				D8BDDFC71E9D570200759851 /* ChoosePhotoViewController.swift in Sources */,
 				D8BDDFF61E9D6D4500759851 /* OptionsViewController.swift in Sources */,
 				D84014FF1EBCFAA2004A3C44 /* KDTree.swift in Sources */,
+				D84135C81EC26E4000500CAD /* TPAArray.swift in Sources */,
 				D84015041EBD0442004A3C44 /* TPADictionary.swift in Sources */,
 				D8BDDFC51E9D570200759851 /* AppDelegate.swift in Sources */,
 				D84015021EBCFBFE004A3C44 /* TPAStorage.swift in Sources */,
@@ -538,6 +542,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_OPTIMIZATION = time;
 				DEVELOPMENT_TEAM = RN25355ML8;
+				GCC_OPTIMIZATION_LEVEL = s;
 				INFOPLIST_FILE = Mosaix/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
