@@ -37,14 +37,14 @@ class MetalImageSelection: ImageSelection {
     private var tpa : TenPointAveraging
     private var timer: MosaicCreationTimer
     
-    required init(refImage: UIImage, timer: MosaicCreationTimer) {
+    required init(refImage: UIImage, timer: MosaicCreationTimer, tpaParallel: Bool) {
         self.state = .NotStarted
         self.referenceImage = refImage
         self.refCGImage = refImage.cgImage!
         self.imageManager = PHImageManager()
         self.allPhotos = nil
         self.skipSize = 0
-        self.tpa = TenPointAveraging(timer: timer)
+        self.tpa = TenPointAveraging(timer: timer, parallel: tpaParallel)
         self.timer = timer
     }
     

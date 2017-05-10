@@ -9,9 +9,17 @@
 import UIKit
 
 class OptionsViewController: UIViewController {
+    
+    @IBOutlet var tpaSwitch: UISwitch! = UISwitch()
+    var tpaSwitchParallel: Bool
+    @IBOutlet var selectionSwitch: UISwitch! = UISwitch()
+    var selectionSwitch: Bool
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        tpaSwitchParallel = (tpaSwitch.isOn) ? true : false
+        selectionSwitchParallel = (selectionSwitch.isOn) ? true : false
 
         // Do any additional setup after loading the view.
     }
@@ -19,6 +27,18 @@ class OptionsViewController: UIViewController {
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
-    }   
+    }
+    
+    @IBAction func tpaSwitchChanged() {
+        tpaSwitchParallel = (tpaSwitch.isOn) ? true : false
+    }
+    
+    @IBAction func selectionSwitchChanged() {
+        selectionSwitchParallel = (selectionSwitch.isOn) ? true : false
+    }
+    
+    @IBAction func onDone() {
+        
+    }
 
 }

@@ -51,11 +51,13 @@ class MosaicCreator {
         }
     }
     
-    init(reference: UIImage) {
+    init(reference: UIImage, tpaParallel: Bool, selectionParallel: Bool) {
         self.state = .NotStarted
         self.reference = reference
         self.timer = MosaicCreationTimer(enabled: true)
-        self.imageSelector = MetalImageSelection(refImage: reference, timer: self.timer)
+        self.imageSelector = selectionParallel
+            ? MetalImageSelection(refImage: reference, timer: self.timer, tpaParallel: tpaParallel)
+            : NaiveImageSelection(refImage: reference, timer: self.timer)
         
         self.totalGridSpaces = 0
         self.gridSpacesFilled = 0

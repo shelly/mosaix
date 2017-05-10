@@ -22,7 +22,7 @@ class CreateMosaicViewController: UIViewController {
         imageView.image = image
         goButton.isHidden = true
         // Do any additional setup after loading the view.
-        mosaicCreator = MosaicCreator(reference: image)
+        mosaicCreator = MosaicCreator(reference: image, tpaParallel: true, selectionParallel: true)
         
         do {
             try mosaicCreator.preprocess(complete: {

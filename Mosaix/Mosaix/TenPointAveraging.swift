@@ -205,9 +205,9 @@ class TenPointAveraging: PhotoProcessor {
     private static var metal : MetalPipeline? = nil
     private var timer : MosaicCreationTimer
     
-    required init(timer: MosaicCreationTimer) {
+    required init(timer: MosaicCreationTimer, parallel: Bool) {
         self.inProgress = false
-        self.storage = KDTree()
+        self.storage = parallel ? KDTree() : TPADictionary()
         self.totalPhotos = 0
         self.photosComplete = 0
         self.timer = timer
