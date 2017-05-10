@@ -29,9 +29,7 @@ We did this with a technique we called Ten Point Averaging (derivative of a nine
 
 _2) Breaking down the reference photo into sections and choosing a single "best" image to represent each section in the composite image._
 
-<!---
-TODO: [WEDS] The reduction stuff that I feel ill-qualified to explain! 
--->
+To choose a best image, each of the subsections of the reference photo reduce across the feature vectors of all of the photos in the photo library, attempting to identify the photo with the lowest absolute difference between the vectors. The result is then used to replace that subsection of the photo. 
 
 #### Platform Choice & Resources 
 
@@ -40,13 +38,12 @@ Mosaix made the most sense on a mobile device because that's the platform on whi
 In particular, our choice of iOS 10 on iPhone 7 is driven mostly by the inclusion of the Metal framework, which gave us unprecendented low-level access to the GPU on the iPhone 7. Not only was the hardware specifically designed with photo processing in mind, but the software gave us complete control over multi-threading and image processing and a simple way of accessing a library of existing photos.
 
 #### Major Challenges
-
+- We'd never worked with Swift 3 or Metal before, and iOS apps are developed using a unique design paradigm, and custom interfaces and data types with restrictions upon how and when they can be used. For example, photos in the Photo Library are stored as and are accessible only as PHAssets, whereas Metal primarily supports MTLTextures and all transformations performed upon photos had to be upon textures in order to run in the kernel.  
+- The iPhone 7 is quad-core, but application usage is restricted, and there is no interface to directly schedule jobs to cores. If an application uses too much power, the application is throttled down, so achieving speedup required a balance between utilizing resources and overreaching our limits. 
+- Fetching photos from the Photo Library is bandwidth-bound, and repeatedly accessing photos from it, or even queuing multiple requests for specific photos, caused slowdown and had to be worked around.
+- 2GB of RAM meant that holding all (or even a reasonable fraction) of photos from the Photo Library in memory efficiently was not possible, and so batch processing and converting to simplified representations of the photos as soon as possible was necessary. 
 <!---
-TODO: [BEFORE WEDS] Rewrite to better address what we tried.
--->
-
- - While each square section of the reference photo is in itself independent, communication between selections of adjacent squares are important for flow in the overall image -- it will be important to select photos that don't contrast highly along the seams between photos in order for the reference photo to be visible from the composite image.
- - Additionally, communication between selections of similar colors, shapes, and contrast patterns is incredibly important as we are choosing not to use the same source photo twice within the composite image. For example, a reference photo with a solid blue sky could very easily match the same photo across a major portion of the gridspace if there was no communication between selection in that region.
+--> 
 
 ## Approach 
 ______
