@@ -119,8 +119,10 @@ class MetalPipeline {
     let library: MTLLibrary
     let NinePointAverage : MTLFunction
     let PhotoNinePointAverage : MTLFunction
+    let FindNearestMatches : MTLFunction
     var pipelineState : MTLComputePipelineState? = nil
     var photoPipelineState : MTLComputePipelineState? = nil
+    var matchesPipelineState : MTLComputePipelineState? = nil
     
     init() {
         self.device = MTLCreateSystemDefaultDevice()!
@@ -128,9 +130,11 @@ class MetalPipeline {
         self.library = self.device.newDefaultLibrary()!
         self.NinePointAverage = self.library.makeFunction(name: "findNinePointAverage")!
         self.PhotoNinePointAverage = self.library.makeFunction(name: "findPhotoNinePointAverage")!
+        self.FindNearestMatches = self.library.makeFunction(name: "findNearestMatches")!
         do {
             self.pipelineState = try self.device.makeComputePipelineState(function: self.NinePointAverage)
             self.photoPipelineState = try self.device.makeComputePipelineState(function: self.PhotoNinePointAverage)
+            self.matchesPipelineState = try self.device.makeComputePipelineState(function: self.FindNearestMatches)
         } catch {
             print("Error initializing pipeline state!")
         }
@@ -174,7 +178,7 @@ class MetalPipeline {
         return texture
     }
     
-    func processImageTexture(texture: MTLTexture, synchronous: Bool, threadWidth: Int, complete : @escaping ([UInt32]) -> Void) {
+    func processImageTexture(texture: MTLTexture, threadWidth: Int, complete : @escaping ([UInt32]) -> Void) {
         let commandBuffer = self.commandQueue.makeCommandBuffer()
         let commandEncoder = commandBuffer.makeComputeCommandEncoder()
         commandEncoder.setComputePipelineState(self.pipelineState!)
@@ -193,14 +197,9 @@ class MetalPipeline {
             complete(results)
         })
         commandBuffer.commit()
-        if (synchronous) {
-            commandBuffer.waitUntilCompleted()
-        }
     }
     
-    func processEntirePhotoTexture(texture: MTLTexture, synchronous: Bool, gridSize: Int,  numGridSpaces: Int, threadWidth: Int, complete: @escaping ([UInt32]) -> Void) {
-        
-        
+    func processEntirePhotoTexture(texture: MTLTexture, gridSize: Int,  numGridSpaces: Int, threadWidth: Int, complete: @escaping ([UInt32]) -> Void) {
         let commandBuffer = self.commandQueue.makeCommandBuffer()
         let commandEncoder = commandBuffer.makeComputeCommandEncoder()
         commandEncoder.setComputePipelineState(self.photoPipelineState!)
@@ -229,19 +228,54 @@ class MetalPipeline {
         commandEncoder.endEncoding()
         commandBuffer.addCompletedHandler({(buffer) -> Void in
             let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: bufferCount))
-            //            print("\(results)")
+            print("\(results)")
             complete(results)
         })
         commandBuffer.commit()
-        if (synchronous) {
-            commandBuffer.waitUntilCompleted()
-        }
+    }
+    
+    func processNearestAverages(refTPAs: [UInt32], otherTPAs: [UInt32], numGridSpaces: Int, threadWidth: Int, complete: @escaping([UInt32]) -> Void) {
+        print("1")
+        let commandBuffer = self.commandQueue.makeCommandBuffer()
+        let commandEncoder = commandBuffer.makeComputeCommandEncoder()
+        commandEncoder.setComputePipelineState(self.matchesPipelineState!)
+        
+        let refBuffer = self.device.makeBuffer(bytes: UnsafeRawPointer(refTPAs), length: MemoryLayout<UInt32>.size * refTPAs.count)
+        commandEncoder.setBuffer(refBuffer, offset: 0, at: 0)
+        
+        let tpaBuffer = self.device.makeBuffer(bytes: UnsafeRawPointer(otherTPAs), length: MemoryLayout<UInt32>.size * otherTPAs.count)
+        commandEncoder.setBuffer(tpaBuffer, offset: 0, at: 1)
+        
+        let resultBufferLength = MemoryLayout<UInt32>.size * numGridSpaces
+        let resultBuffer = self.device.makeBuffer(length: resultBufferLength)
+        commandEncoder.setBuffer(resultBuffer, offset: 0, at: 2)
+        
+        let paramBufferLength = MemoryLayout<UInt32>.size * 2;
+        let params = UnsafeMutableRawPointer.allocate(bytes: MemoryLayout<UInt32>.size, alignedTo: 1)
+        print("params: [\(refTPAs.count), \(otherTPAs.count)]")
+        params.storeBytes(of: UInt32(refTPAs.count), as: UInt32.self)
+        params.storeBytes(of: UInt32(otherTPAs.count), toByteOffset: 4, as: UInt32.self)
+        let paramBuffer = self.device.makeBuffer(bytes: params, length: paramBufferLength)
+        commandEncoder.setBuffer(paramBuffer, offset: 0, at: 3)
+        
+        let gridSize : MTLSize = MTLSize(width: 9, height: 1, depth: 1)
+        let threadGroupSize : MTLSize = MTLSize(width: 4, height: 1, depth: 1)
+        commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
+        commandEncoder.endEncoding()
+        
+        commandBuffer.addCompletedHandler({(buffer) -> Void in
+            let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: numGridSpaces))
+            complete(results)
+        })
+        print("2")
+        commandBuffer.commit()
+        print("committed")
     }
 }
 
 class TenPointAveraging: PhotoProcessor {
     private var inProgress : Bool
-    private var storage : TPAStorage
+    private var storage : TPAArray
     private static var imageManager : PHImageManager?
     private var totalPhotos : Int
     private var photosComplete : Int
@@ -251,7 +285,7 @@ class TenPointAveraging: PhotoProcessor {
     
     required init(timer: MosaicCreationTimer) {
         self.inProgress = false
-        self.storage = KDTree()
+        self.storage = TPAArray()
         self.totalPhotos = 0
         self.photosComplete = 0
         self.timer = timer
@@ -272,6 +306,7 @@ class TenPointAveraging: PhotoProcessor {
         DispatchQueue.global(qos: .background).async {
             self.loadStorageFromFile()
             step("Loading from file.")
+            print("loaded from file")
             PHPhotoLibrary.requestAuthorization { (status) in
                 switch status {
                 case .authorized:
@@ -279,8 +314,10 @@ class TenPointAveraging: PhotoProcessor {
                     userAlbumsOptions.predicate = NSPredicate(format: "estimatedAssetCount > 0")
                     let userAlbums = PHAssetCollection.fetchAssetCollections(with: PHAssetCollectionType.album, subtype: PHAssetCollectionSubtype.albumSyncedAlbum, options: userAlbumsOptions)
                     step("Fetching albums.")
+                    print("fetched albums")
                     self.processAllPhotos(userAlbums: userAlbums, complete: {(changed: Bool) -> Void in
                         step("Processing photos")
+                        print("processed photos")
                         //Save to file
                         if (changed) {
                             self.saveStorageToFile()
@@ -303,13 +340,21 @@ class TenPointAveraging: PhotoProcessor {
         return self.storage.findNearestMatch(to: tpa)
     }
     
+    func findNearestMatches(results: [UInt32], numGridSpaces: Int, complete: @escaping ([String]) -> Void) -> Void {
+        TenPointAveraging.metal!.processNearestAverages(refTPAs: results, otherTPAs: self.storage.tpaData, numGridSpaces: numGridSpaces, threadWidth: 32, complete: {(matchIndexes) -> Void in
+            complete(matchIndexes.map({(tpaIndex) -> String in
+                return self.storage.tpaIds[Int(tpaIndex)]
+            }))
+        })
+    }
+    
 
     private func processAllPhotos(userAlbums: PHFetchResult<PHAssetCollection>, complete: @escaping (_ changed: Bool) -> Void) {
         var changed: Bool = false
         userAlbums.enumerateObjects({(collection: PHAssetCollection, albumIndex: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             stop.pointee = true
             let options = PHFetchOptions()
-//            options.fetchLimit = 1000
+            options.fetchLimit = 100
             let fetchResult = PHAsset.fetchAssets(in: collection, options: options)
             self.totalPhotos = fetchResult.count
             self.photosComplete = 0
@@ -365,7 +410,7 @@ class TenPointAveraging: PhotoProcessor {
             }
         }
         if (texture != nil) {
-            TenPointAveraging.metal?.processImageTexture(texture: texture!, synchronous: synchronous, threadWidth: self.threadWidth, complete: {(result : [UInt32]) -> Void in
+            TenPointAveraging.metal?.processImageTexture(texture: texture!, threadWidth: self.threadWidth, complete: {(result : [UInt32]) -> Void in
                 let tba = TenPointAverage()
                 for i in 0 ..< 3 {
                     for j in 0  ..< 3 {
@@ -404,9 +449,9 @@ class TenPointAveraging: PhotoProcessor {
             .url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
             .appendingPathComponent(self.storage.pListPath)
         
-        if let stored = NSKeyedUnarchiver.unarchiveObject(withFile: fileURL.path) as? TPAStorage {
+        if let stored = NSKeyedUnarchiver.unarchiveObject(withFile: fileURL.path) as? TPAArray {
             
-            self.storage = stored
+            self.storage = stored 
             print("self.storage successfully loaded from file.\n")
             
         }

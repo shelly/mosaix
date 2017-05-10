@@ -102,31 +102,59 @@ class MetalImageSelection: ImageSelection {
         }
         
         let texture = try TenPointAveraging.metal!.getImageTexture(image: self.refCGImage)
-        TenPointAveraging.metal!.processEntirePhotoTexture(texture: texture, synchronous: true, gridSize: gridSizePoints, numGridSpaces: numGridSpaces,  threadWidth: 32, complete: {(results) -> Void in
-            let numRows : Int = Int(self.referenceImage.size.height) / gridSizePoints
-            let numCols : Int = Int(self.referenceImage.size.width) / gridSizePoints
-            for threadId in 0 ..< self.numThreads {
-                DispatchQueue.global(qos: .background).async {
-                    for i in stride(from: threadId, to: numRows * numCols, by: self.numThreads) {
-                        let row = i / numCols
-                        let col = i % numCols
+        TenPointAveraging.metal!.processEntirePhotoTexture(texture: texture, gridSize: gridSizePoints, numGridSpaces: numGridSpaces,  threadWidth: 32, complete: {(results) -> Void in
+            print("finding nearest matches...")
+            self.tpa.findNearestMatches(results: results, numGridSpaces: numGridSpaces, complete: {(assetIds) -> Void in
+//                print("Asset IDs: \(assetIds)")
+                var assetData : [String : PHAsset] = [:]
+                let choiceAssets = PHAsset.fetchAssets(withLocalIdentifiers: assetIds, options: nil)
+                choiceAssets.enumerateObjects({ (asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) in
+                    assetData[asset.localIdentifier] = asset
+                })
+                
+                let numRows : Int = Int(sqrt(Double(numGridSpaces)))
+                for row in 0 ..< numRows {
+                    for col in 0 ..< numRows {
                         let x = col * gridSizePoints
                         let y = row * gridSizePoints
                         //Make sure that we cover the whole image and don't go over!
                         let rectWidth = min(Int(self.referenceImage.size.width) - x, gridSizePoints)
                         let rectHeight = min(Int(self.referenceImage.size.height) - y, gridSizePoints)
-                        if (rectWidth > 0 && rectHeight > 0) {
-                            self.findBestMatch(row: row, col: col, squareIndex: i, refRegion: CGRect(x: x, y: y, width: rectWidth, height: rectHeight), tpaPoints: results,
-                                               onSelect: {(choice: ImageChoice) -> Void in
-                                                    DispatchQueue.main.async {
-                                                        onSelect(choice)
-                                                    }
-                                                
-                            })
-                        }
+                        let choiceRegion = CGRect(x:0, y:0, width: rectWidth, height: rectHeight)
+                        let targetSize = CGSize(width: rectWidth, height: rectHeight)
+                        self.imageManager.requestImage(for: assetData[assetIds[row*numRows + col]]!, targetSize: targetSize, contentMode: PHImageContentMode.default, options: PHImageRequestOptions(), resultHandler: {(result, info) -> Void in
+                            
+                            let choice = ImageChoice(position: (row: row, col: col), image: result!, region: choiceRegion, fit: 0)
+                            onSelect(choice)
+                        })
                     }
                 }
-            }
+                
+            })
+//            let numRows : Int = Int(self.referenceImage.size.height) / gridSizePoints
+//            let numCols : Int = Int(self.referenceImage.size.width) / gridSizePoints
+//            for threadId in 0 ..< self.numThreads {
+//                DispatchQueue.global(qos: .background).async {
+//                    for i in stride(from: threadId, to: numRows * numCols, by: self.numThreads) {
+//                        let row = i / numCols
+//                        let col = i % numCols
+//                        let x = col * gridSizePoints
+//                        let y = row * gridSizePoints
+//                        //Make sure that we cover the whole image and don't go over!
+//                        let rectWidth = min(Int(self.referenceImage.size.width) - x, gridSizePoints)
+//                        let rectHeight = min(Int(self.referenceImage.size.height) - y, gridSizePoints)
+//                        if (rectWidth > 0 && rectHeight > 0) {
+//                            self.findBestMatch(row: row, col: col, squareIndex: i, refRegion: CGRect(x: x, y: y, width: rectWidth, height: rectHeight), tpaPoints: results,
+//                                               onSelect: {(choice: ImageChoice) -> Void in
+//                                                    DispatchQueue.main.async {
+//                                                        onSelect(choice)
+//                                                    }
+//                                                
+//                            })
+//                        }
+//                    }
+//                }
+//            }
         })
     }
 }

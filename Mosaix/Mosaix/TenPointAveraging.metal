@@ -130,8 +130,52 @@ kernel void findPhotoNinePointAverage(
 }
 
 kernel void findNearestMatches(
-
+    device uint* refTPAs [[ buffer(0) ]],
+    device uint* otherTPAs [[ buffer(1) ]],
+    device uint* result  [[ buffer(2) ]],
+    device uint* params  [[ buffer(3) ]],
+    uint threadId [[ thread_position_in_grid ]],
+    uint numThreads [[ threads_per_grid ]]
 ) {
+    const uint pointsPerTPA = 9 * 3;
+    uint refTPACount = params[0] / pointsPerTPA;
+    uint otherTPACount = params[1] / pointsPerTPA;
     
+    for (uint refTPAIndex = threadId; refTPAIndex < refTPACount; refTPAIndex += numThreads) {
+        uint minTPAId = 0;
+        float minDiff = 0.0;
+        for (uint otherIndex = 0; otherIndex < otherTPACount; otherIndex++) {
+            float diff = 0.0;
+            for (uint delta = 0; delta < pointsPerTPA; delta++) {
+                diff += abs(refTPAs[refTPAIndex*pointsPerTPA + delta] - otherTPAs[otherIndex*pointsPerTPA + delta]);
+            }
+            if (otherIndex == 0 || diff < minDiff) {
+                minTPAId = otherIndex;
+                minDiff = diff;
+            }
+        }
+        result[refTPAIndex] = minTPAId;
+    }
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
