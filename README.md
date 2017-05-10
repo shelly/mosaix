@@ -54,10 +54,9 @@ ______
  - Pre-processing of the device's Photo Library that reduces complexity and time of the generation of each individual mosaic.
  - Performance that improves upon existing solutions in the app store. While there are a few apps already that perform similar functions to Mosaix, they consume 30-40s per image to finish processing (depending on grid size and quality).
 
-## Results
+## References 
 ______
-
-#### References 
 - Apple Developer Documentation 
 
-#### List of Work By Each Student 
+## List of Work By Each Student 
+______
