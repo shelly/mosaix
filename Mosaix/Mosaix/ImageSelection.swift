@@ -23,6 +23,7 @@ enum ImageSelectionError: Error {
 }
 
 protocol ImageSelection {
-    init(refImage : UIImage)
+    init(refImage : UIImage, timer: MosaicCreationTimer)
+    func preprocess(then complete: @escaping () -> Void) throws -> Void
     func select(gridSizePoints : Int, quality: Int, onSelect : @escaping (ImageChoice) -> Void) throws -> Void
 }

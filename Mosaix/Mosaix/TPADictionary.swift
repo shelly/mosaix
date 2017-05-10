@@ -9,12 +9,16 @@
 import Foundation
 import Photos
 
-class TPADictionary : TPAStorage {
+class TPADictionary : NSObject, TPAStorage {
     
+
+    public var pListPath = "dictionary.plist"
     private var averages : [String : TenPointAverage]
+
     
-    required init() {
+    required override init() {
         self.averages = [:]
+        super.init()
     }
     
     func insert(asset: String, tpa: TenPointAverage) {
@@ -42,11 +46,19 @@ class TPADictionary : TPAStorage {
         }
     }
     
-    func toString() -> String {
-        return ""
+    //NSCoding
+    
+    required init?(coder aDecoder: NSCoder) {
+        print("Decoding averages")
+        self.averages = [:]
+        self.averages = aDecoder.decodeObject(forKey: "identifier_averages") as! [String : TenPointAverage]
     }
     
-    static func fromString(storageString: String) -> TPAStorage? {
-        return nil
+    
+    func encode(with aCoder: NSCoder) -> Void{
+        print("Trying to encode averages")
+        aCoder.encode(self.averages, forKey: "identifier_averages")
+        print("Averages encoded")
     }
+    
 }

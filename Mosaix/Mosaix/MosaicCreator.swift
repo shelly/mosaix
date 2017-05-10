@@ -9,8 +9,16 @@
 import Foundation
 import UIKit
 
+enum MosaicCreationState {
+    case NotStarted
+    case PreprocessingInProgress
+    case PreprocessingComplete
+    case InProgress
+    case Complete
+}
+
 enum MosaicCreationError: Error {
-    case MosaicCreationInProgress
+    case InvalidState
     case QualityOutOfBounds
     case GridSizeOutOfBounds
 }
@@ -27,10 +35,11 @@ class MosaicCreator {
     
     private let imageSelector : ImageSelection
     private let reference : UIImage
-    private var inProgress : Bool
+    private var state : MosaicCreationState
     private var _gridSizePoints : Int
     private var _quality : Int = (MosaicCreationConstants.qualityMax + MosaicCreationConstants.qualityMin)/2
     private let compositeContext: CGContext
+    private var timer : MosaicCreationTimer
     
     private var totalGridSpaces : Int
     private var gridSpacesFilled : Int
@@ -43,9 +52,10 @@ class MosaicCreator {
     }
     
     init(reference: UIImage) {
-        self.inProgress = false
+        self.state = .NotStarted
         self.reference = reference
-        self.imageSelector = MetalImageSelection(refImage: reference)
+        self.timer = MosaicCreationTimer(enabled: true)
+        self.imageSelector = MetalImageSelection(refImage: reference, timer: self.timer)
         
         self.totalGridSpaces = 0
         self.gridSpacesFilled = 0
@@ -86,41 +96,54 @@ class MosaicCreator {
         self._quality = quality
     }
     
-    func begin(tick : @escaping () -> Void, complete : @escaping () -> Void) throws -> Void {
-        print("Beginning Mosaic generation")
-        if (self.inProgress) {
-            throw MosaicCreationError.MosaicCreationInProgress
+    func preprocess(complete: @escaping () -> Void) throws -> Void {
+        if (self.state == .InProgress || self.state == .PreprocessingInProgress) {
+            throw MosaicCreationError.InvalidState
+        } else if (self.state == .PreprocessingComplete || self.state == .Complete) {
+            self.state = .PreprocessingComplete
+            complete()
         } else {
-            self.inProgress = true
-            self.totalGridSpaces = (Int(self.reference.size.width) / self._gridSizePoints) * (Int(self.reference.size.height) / self._gridSizePoints)
-            self.gridSpacesFilled = 0
-                do {
-                    try self.imageSelector.select(gridSizePoints: self._gridSizePoints, quality: self._quality, onSelect: {(choice: ImageChoice) in
-                        self.gridSpacesFilled += 1
-                        UIGraphicsPushContext(self.compositeContext)
-                            
-                        let drawRect = CGRect(x: choice.position.col * Int(self._gridSizePoints) + Int(choice.region.minX),
-                                                  y: choice.position.row * Int(self._gridSizePoints) + Int(choice.region.minY),
-                                                  width: Int(choice.region.width), height: Int(choice.region.height))
-
-                        
-                        choice.image.draw(in: drawRect)
-                        UIGraphicsPopContext()
-                        if (self.gridSpacesFilled == self.totalGridSpaces) {
-                                self.inProgress = false
-                                complete()
-                        } else {
-                            tick()
-                        }
-                    })
-                } catch {
-                    print("Error selecting image: \(error)")
-                }
+            //Needs to preprocess
+            self.state = .PreprocessingInProgress
+            try self.imageSelector.preprocess(then: {() -> Void in
+                self.state = .PreprocessingComplete
+                complete()
+            })
         }
     }
     
+    func begin(tick : @escaping () -> Void, complete : @escaping () -> Void) throws -> Void {
+        guard (self.state == .PreprocessingComplete) else {
+            throw MosaicCreationError.InvalidState
+        }
+        
+        print("Beginning Mosaic generation")
+        self.state = .InProgress
+        self.totalGridSpaces = (Int(self.reference.size.width) / self._gridSizePoints) * (Int(self.reference.size.height) / self._gridSizePoints)
+        self.gridSpacesFilled = 0
+        try self.imageSelector.select(gridSizePoints: self._gridSizePoints, quality: self._quality, onSelect: {(choice: ImageChoice) in
+            self.gridSpacesFilled += 1
+            UIGraphicsPushContext(self.compositeContext)
+                
+            let drawRect = CGRect(x: choice.position.col * Int(self._gridSizePoints) + Int(choice.region.minX),
+                                      y: choice.position.row * Int(self._gridSizePoints) + Int(choice.region.minY),
+                                      width: Int(choice.region.width), height: Int(choice.region.height))
+
+            
+            choice.image.draw(in: drawRect)
+            UIGraphicsPopContext()
+            if (self.gridSpacesFilled == self.totalGridSpaces) {
+                    self.state = .Complete
+                    complete()
+                    self.timer.report()
+            } else {
+                tick()
+            }
+        })
+    }
+    
     func progress() -> Int {
-        if (!self.inProgress) {return 0}
+        if (!(self.state == .InProgress)) {return 0}
         return Int(100.0 * (Float(self.gridSpacesFilled) / Float(self.totalGridSpaces)))
     }
 }

@@ -27,7 +27,7 @@ import Photos
  *
  */
 
-private class KDNode {
+private class KDNode: NSObject, NSCoding {
     let tpa: TenPointAverage
     let asset: String
     var left: KDNode? = nil
@@ -37,6 +37,38 @@ private class KDNode {
         self.tpa = tpa
         self.asset = asset
     }
+    
+    //NSCoding
+    
+    required init?(coder aDecoder: NSCoder) {
+        self.tpa = aDecoder.decodeObject(forKey: "tpa") as! TenPointAverage
+        self.asset = aDecoder.decodeObject(forKey: "asset") as! String
+        
+        if let left = aDecoder.decodeObject(forKey: "left") as? KDNode {
+            self.left = left
+        } else {
+            self.left = nil
+        }
+        
+        if let right = aDecoder.decodeObject(forKey: "right") as? KDNode {
+            self.right = right
+        } else {
+            self.right = nil
+        }
+        
+        super.init()
+    }
+    
+    func encode(with aCoder: NSCoder) -> Void{
+        aCoder.encode(self.tpa, forKey: "tpa")
+        aCoder.encode(self.asset, forKey: "asset")
+        if (self.left != nil) {
+            aCoder.encode(self.left, forKey: "left")
+        }
+        if (self.right != nil) {
+        aCoder.encode(self.right, forKey: "right")
+        }
+    }
 }
 
 enum TPAComparison {
@@ -45,12 +77,13 @@ enum TPAComparison {
     case greater
 }
 
-class KDTree : TPAStorage {
-    
+class KDTree : NSObject, NSCoding, TPAStorage {
+
+    public var pListPath = "kdtree.plist"
     private var root : KDNode? = nil
     private var assets : Set<String>
     
-    required init() {
+    required override init() {
         self.assets = []
     }
     
@@ -218,11 +251,21 @@ class KDTree : TPAStorage {
         return self.distanceAtLevel(tpa, node!.tpa, atLevel: atLevel) < diff
     }
     
-    func toString() -> String {
-        return ""
+    //NSCoding
+    
+    required init?(coder aDecoder: NSCoder) {
+        self.assets = []
+        self.assets = aDecoder.decodeObject(forKey: "assets") as! Set<String>
+        if let root = aDecoder.decodeObject(forKey: "root") as? KDNode {
+            self.root = root
+        } else {
+            self.root = nil
+        }
+        super.init()
     }
     
-    static func fromString(storageString: String) -> TPAStorage? {
-        return nil
+    func encode(with aCoder: NSCoder) -> Void{
+        aCoder.encode(root, forKey: "root")
+        aCoder.encode(assets, forKey: "assets")
     }
 }
