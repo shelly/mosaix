@@ -216,11 +216,16 @@
                                                 <segue destination="cYD-I7-TC2" kind="unwind" unwindAction="backToCreateMosaicFor:sender:" id="2EM-KT-GvR"/>
                                             </connections>
                                         </barButtonItem>
+                                        <barButtonItem key="rightBarButtonItem" title="Save" id="oMt-2D-5t5">
+                                            <connections>
+                                                <action selector="savePhoto" destination="XUT-M6-D6C" id="K25-IP-Dmb"/>
+                                            </connections>
+                                        </barButtonItem>
                                     </navigationItem>
                                 </items>
                             </navigationBar>
                             <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="BlF-77-TK7">
-                                <rect key="frame" x="16" y="84" width="343" height="356"/>
+                                <rect key="frame" x="16" y="84" width="343" height="563"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             </imageView>
                         </subviews>
@@ -228,12 +233,13 @@
                     </view>
                     <connections>
                         <outlet property="compositePhoto" destination="BlF-77-TK7" id="hAH-Xw-iDE"/>
+                        <outlet property="saveButton" destination="oMt-2D-5t5" id="UDQ-gV-Pp5"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="XEV-Dq-913" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <exit id="cYD-I7-TC2" userLabel="Exit" sceneMemberID="exit"/>
             </objects>
-            <point key="canvasLocation" x="1964" y="139"/>
+            <point key="canvasLocation" x="1964" y="138.98050974512745"/>
         </scene>
     </scenes>
     <resources>

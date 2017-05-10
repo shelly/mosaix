@@ -10,12 +10,16 @@ class CompositePhotoViewController: UIViewController {
     
     var mosaicCreator: MosaicCreator!
     @IBOutlet weak var compositePhoto: UIImageView! = UIImageView()
+    @IBOutlet weak var saveButton: UIBarButtonItem! = UIBarButtonItem()
+    var compositePhotoImage: UIImage = UIImage()
+    var canSavePhoto = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
         print("beginning mosaic")
         self.compositePhoto.contentMode = UIViewContentMode.scaleAspectFit
-        self.compositePhoto.image = self.mosaicCreator.compositeImage
+        self.compositePhotoImage = self.mosaicCreator.compositeImage
+        self.compositePhoto.image = self.compositePhotoImage
         
         do {
             try self.mosaicCreator.begin(tick: {() -> Void in
@@ -24,7 +28,9 @@ class CompositePhotoViewController: UIViewController {
             }, complete: {() -> Void in
                 // This will be called when the mosaic is complete.
                 print("Mosaic complete!")
-                self.compositePhoto.image = self.mosaicCreator.compositeImage
+                self.compositePhotoImage = self.mosaicCreator.compositeImage
+                self.compositePhoto.image = self.compositePhotoImage
+                self.canSavePhoto = true
             })
         } catch {
             print("oh shit")
@@ -35,6 +41,12 @@ class CompositePhotoViewController: UIViewController {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
 
+    @IBAction func savePhoto() {
+        
+        if (self.canSavePhoto) {
+            UIImageWriteToSavedPhotosAlbum(self.compositePhotoImage, nil, nil, nil)
+        }
+        
+    }
 }
