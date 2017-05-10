@@ -22,18 +22,6 @@ Our application is a Swift mobile app with a fairly simple user interface; the u
 
 Our goal was to implement a reasonable approach to transforming photos into a feature vector, apply this transformation efficiently to the entire Photo Library, and then find the minimum difference between the vector of a subsection of our reference photo and the vector of some photo from the photo library so that we can replace it. 
 
-There were two main algorithms we parallelized.
-<ol>
-  <li><em>Generating a reasonable representation of photos within the Photo Library so that we can efficiently detect what the best match for a particular subsection of our reference photo is.</em>
-  
-  We did this with a technique we called Ten Point Averaging (derivative of a nine point average system), which split each library photo into a 3x3 grid and found the average R, G, and B values in each subsection, as well as the average R, G, and B values for the entire image. We then created a 30-dimensional feature vector of these 10 numbers x 3 channels, and considered this as our representation of the image for candidate selection.
-  </li>
-  <li><em>Breaking down the reference photo into sections and choosing a single "best" image to represent each section in the composite image.</em>
-  
-  To choose a best image, each of the subsections of the reference photo reduce across the feature vectors of all of the photos in the photo library, attempting to identify candidate photos with lower absolute differences between their feature vectors. The resulting best fit is then used to replace that subsection of the photo. 
-  </li>
-</ol>
-
 #### Platform Choice & Resources 
 
 Mosaix made the most sense on a mobile device because that's the platform on which a majority of our everyday photos are taken and stored. Creating a mobile app made it easy for the end user to take a photo and see a live result, and made sharing the composite image much simpler. 
@@ -50,6 +38,18 @@ In particular, our choice of iOS 10 on iPhone 7 is driven mostly by the inclusio
 
 ## Approach 
 ______
+
+There were two main algorithms we parallelized.
+<ol>
+  <li><em>Generating a reasonable representation of photos within the Photo Library so that we can efficiently detect what the best match for a particular subsection of our reference photo is.</em>
+  
+  We did this with a technique we called Ten Point Averaging (derivative of a nine point average system), which split each library photo into a 3x3 grid and found the average R, G, and B values in each subsection, as well as the average R, G, and B values for the entire image. We then created a 30-dimensional feature vector of these 10 numbers x 3 channels, and considered this as our representation of the image for candidate selection.
+  </li>
+  <li><em>Breaking down the reference photo into sections and choosing a single "best" image to represent each section in the composite image.</em>
+  
+  To choose a best image, each of the subsections of the reference photo reduce across the feature vectors of all of the photos in the photo library, attempting to identify candidate photos with lower absolute differences between their feature vectors. The resulting best fit is then used to replace that subsection of the photo. 
+  </li>
+</ol>
 
 <!---
 TODO: [BEFORE FRIDAY] Rewrite to better address current approach.
