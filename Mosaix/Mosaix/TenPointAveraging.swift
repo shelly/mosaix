@@ -235,7 +235,7 @@ class MetalPipeline {
     }
     
     func processNearestAverages(refTPAs: [UInt32], otherTPAs: [UInt32], numGridSpaces: Int, threadWidth: Int, complete: @escaping([UInt32]) -> Void) {
-        print("1")
+//        print("1")
         let commandBuffer = self.commandQueue.makeCommandBuffer()
         let commandEncoder = commandBuffer.makeComputeCommandEncoder()
         commandEncoder.setComputePipelineState(self.matchesPipelineState!)
@@ -252,7 +252,7 @@ class MetalPipeline {
         
         let paramBufferLength = MemoryLayout<UInt32>.size * 2;
         let params = UnsafeMutableRawPointer.allocate(bytes: MemoryLayout<UInt32>.size, alignedTo: 1)
-        print("params: [\(refTPAs.count), \(otherTPAs.count)]")
+//        print("params: [\(refTPAs.count), \(otherTPAs.count)]")
         params.storeBytes(of: UInt32(refTPAs.count), as: UInt32.self)
         params.storeBytes(of: UInt32(otherTPAs.count), toByteOffset: 4, as: UInt32.self)
         let paramBuffer = self.device.makeBuffer(bytes: params, length: paramBufferLength)
@@ -265,12 +265,12 @@ class MetalPipeline {
         
         commandBuffer.addCompletedHandler({(buffer) -> Void in
             let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: numGridSpaces))
-            print("\(results)")
+//            print("\(results)")
             complete(results)
         })
-        print("2")
+//        print("2")
         commandBuffer.commit()
-        print("committed")
+//        print("committed")
     }
 }
 

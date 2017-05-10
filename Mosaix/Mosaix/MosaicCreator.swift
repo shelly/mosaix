@@ -8,6 +8,7 @@
 
 import Foundation
 import UIKit
+import Photos
 
 enum MosaicCreationState {
     case NotStarted
@@ -124,25 +125,43 @@ class MosaicCreator {
         self.totalGridSpaces = numRows * numCols
         print("Total grid spaces: \(self.totalGridSpaces)")
         self.gridSpacesFilled = 0
-        try self.imageSelector.select(gridSizePoints: self._gridSizePoints, numGridSpaces: self.totalGridSpaces, numRows: numRows, numCols: numCols, quality: self._quality, onSelect: {(choice: ImageChoice) in
-            self.gridSpacesFilled += 1
-            UIGraphicsPushContext(self.compositeContext)
+        try self.imageSelector.select(gridSizePoints: self._gridSizePoints, numGridSpaces: self.totalGridSpaces, numRows: numRows, numCols: numCols, quality: self._quality, onSelect:
+            {(assetIds) -> Void in
+                //                print("Found \(assetIds.count) asset IDs.")
+                var assetData : [String : PHAsset] = [:]
+                let choiceAssets = PHAsset.fetchAssets(withLocalIdentifiers: assetIds, options: nil)
+                choiceAssets.enumerateObjects({ (asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) in
+                    assetData[asset.localIdentifier] = asset
+                })
                 
-            let drawRect = CGRect(x: choice.position.col * Int(self._gridSizePoints) + Int(choice.region.minX),
-                                      y: choice.position.row * Int(self._gridSizePoints) + Int(choice.region.minY),
-                                      width: Int(choice.region.width), height: Int(choice.region.height))
-
-            
-            choice.image.draw(in: drawRect)
-            UIGraphicsPopContext()
-            if (self.gridSpacesFilled == self.totalGridSpaces) {
-                    self.state = .Complete
-                    step("Complete")
-                    self.timer.complete(report: true)
-                    complete()
-            } else {
-                tick()
-            }
+                let imageManager = PHImageManager()
+                UIGraphicsPushContext(self.compositeContext)
+                for row in 0 ..< numRows {
+                    for col in 0 ..< numCols {
+                        let x = col * self._gridSizePoints
+                        let y = row * self._gridSizePoints
+                        //Make sure that we cover the whole image and don't go over!
+                        let rectWidth = min(Int(self.reference.size.width) - x, self._gridSizePoints)
+                        let rectHeight = min(Int(self.reference.size.height) - y, self._gridSizePoints)
+                        let choiceRegion = CGRect(x:0, y:0, width: rectWidth, height: rectHeight)
+                        let targetSize = CGSize(width: rectWidth, height: rectHeight)
+                        let options = PHImageRequestOptions()
+                        options.isSynchronous = true
+                        imageManager.requestImage(for: assetData[assetIds[row*numRows + col]]!, targetSize: targetSize, contentMode: PHImageContentMode.aspectFill, options: options, resultHandler: {(result, info) -> Void in
+                            let drawRect = CGRect(x: col * Int(self._gridSizePoints) + Int(choiceRegion.minX),
+                                                  y: row * Int(self._gridSizePoints) + Int(choiceRegion.minY),
+                                                  width: Int(rectWidth), height: Int(rectHeight))
+                            print("drawing to \(drawRect)")
+                            result!.draw(in: drawRect)
+                        })
+                    }
+                }
+                UIGraphicsPopContext()
+                self.state = .Complete
+                step("Complete")
+                self.timer.complete(report: true)
+                complete()
+                
         })
     }
     
