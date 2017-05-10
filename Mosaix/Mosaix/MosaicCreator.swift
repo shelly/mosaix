@@ -119,10 +119,12 @@ class MosaicCreator {
         let step = self.timer.task("Photo Mosaic Generation")
 //        print("Beginning Mosaic generation")
         self.state = .InProgress
-        self.totalGridSpaces = (Int(self.reference.size.width) / self._gridSizePoints) * (Int(self.reference.size.height) / self._gridSizePoints)
+        let numRows = Int(self.reference.size.width) / self._gridSizePoints
+        let numCols = Int(self.reference.size.height) / self._gridSizePoints
+        self.totalGridSpaces = numRows * numCols
         print("Total grid spaces: \(self.totalGridSpaces)")
         self.gridSpacesFilled = 0
-        try self.imageSelector.select(gridSizePoints: self._gridSizePoints, numGridSpaces: self.totalGridSpaces, quality: self._quality, onSelect: {(choice: ImageChoice) in
+        try self.imageSelector.select(gridSizePoints: self._gridSizePoints, numGridSpaces: self.totalGridSpaces, numRows: numRows, numCols: numCols, quality: self._quality, onSelect: {(choice: ImageChoice) in
             self.gridSpacesFilled += 1
             UIGraphicsPushContext(self.compositeContext)
                 

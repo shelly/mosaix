@@ -95,7 +95,7 @@ class MetalImageSelection: ImageSelection {
         })
     }
     
-    func select(gridSizePoints: Int, numGridSpaces: Int, quality: Int, onSelect: @escaping (ImageChoice) -> Void) throws -> Void {
+    func select(gridSizePoints: Int, numGridSpaces: Int, numRows: Int, numCols: Int, quality: Int, onSelect: @escaping (ImageChoice) -> Void) throws -> Void {
         //Pre-process library
         guard (self.state == .PreprocessingComplete) else {
             throw MetalSelectionError.InvalidProcessingState
@@ -105,16 +105,15 @@ class MetalImageSelection: ImageSelection {
         TenPointAveraging.metal!.processEntirePhotoTexture(texture: texture, gridSize: gridSizePoints, numGridSpaces: numGridSpaces,  threadWidth: 32, complete: {(results) -> Void in
             print("finding nearest matches...")
             self.tpa.findNearestMatches(results: results, numGridSpaces: numGridSpaces, complete: {(assetIds) -> Void in
-//                print("Asset IDs: \(assetIds)")
+                print("Found \(assetIds.count) asset IDs.")
                 var assetData : [String : PHAsset] = [:]
                 let choiceAssets = PHAsset.fetchAssets(withLocalIdentifiers: assetIds, options: nil)
                 choiceAssets.enumerateObjects({ (asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) in
                     assetData[asset.localIdentifier] = asset
                 })
-                
-                let numRows : Int = Int(sqrt(Double(numGridSpaces)))
+                print("numGridSpaces: \(numGridSpaces)")
                 for row in 0 ..< numRows {
-                    for col in 0 ..< numRows {
+                    for col in 0 ..< numCols {
                         let x = col * gridSizePoints
                         let y = row * gridSizePoints
                         //Make sure that we cover the whole image and don't go over!

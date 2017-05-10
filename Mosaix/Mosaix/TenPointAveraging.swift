@@ -228,7 +228,7 @@ class MetalPipeline {
         commandEncoder.endEncoding()
         commandBuffer.addCompletedHandler({(buffer) -> Void in
             let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: bufferCount))
-            print("\(results)")
+//            print("\(results)")
             complete(results)
         })
         commandBuffer.commit()
@@ -265,6 +265,7 @@ class MetalPipeline {
         
         commandBuffer.addCompletedHandler({(buffer) -> Void in
             let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: numGridSpaces))
+            print("\(results)")
             complete(results)
         })
         print("2")
@@ -354,7 +355,6 @@ class TenPointAveraging: PhotoProcessor {
         userAlbums.enumerateObjects({(collection: PHAssetCollection, albumIndex: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             stop.pointee = true
             let options = PHFetchOptions()
-            options.fetchLimit = 100
             let fetchResult = PHAsset.fetchAssets(in: collection, options: options)
             self.totalPhotos = fetchResult.count
             self.photosComplete = 0
