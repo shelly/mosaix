@@ -5,7 +5,7 @@
 ## Summary
 ______
 
-We created an iOS application which uses the Metal framework to generate photo mosaics in parallel, on-demand. Using the photos already in the device's Photo Library, Mosaix reconstructs the reference photo by selecting photos which match in color, shape, and contrast and placing them in a grid pattern representing the original image. <!--- Insert sentence here directly comparing our abilities to apps in the App Store/our naive implementation. -->
+We created an iOS application which uses the Metal framework to generate photo mosaics in parallel, on-demand. Using the photos already in the device's Photo Library, Mosaix reconstructs the reference photo by selecting photos which match in color, shape, and contrast and placing them in a grid pattern representing the original image. _Our iOS app currently exhibits about 20x speedup over the leading photo mosaic applications available in the App Store._
 
 <p align="center">
   <img width="350" src="https://hunt.blob.core.windows.net/web-images/parallel/dog.jpg">
@@ -23,7 +23,7 @@ Our application is a Swift mobile app with a fairly simple user interface; the u
 There were two main algorithms we parallelized - 1) generating a reasonable representation of photos within the Photo Library so that we can efficiently detect what the best match for a particular subsection of our reference photo is, and 2), breaking down the reference photo into sections and choosing a single "best" image to represent each section in the composite image.
 
 <!---
-TODO: Add more about our implementation here.  
+TODO: [WEDS] Add more about our implementation here.  
 -->
 
 #### Platform Choice & Resources 
@@ -35,7 +35,7 @@ In particular, our choice of iOS 10 on iPhone 7 is driven mostly by the inclusio
 #### Major Challenges
 
 <!---
-TODO: Rewrite to better address what we tried.
+TODO: [BEFORE WEDS] Rewrite to better address what we tried.
 -->
 
  - While each square section of the reference photo is in itself independent, communication between selections of adjacent squares are important for flow in the overall image -- it will be important to select photos that don't contrast highly along the seams between photos in order for the reference photo to be visible from the composite image.
@@ -43,9 +43,17 @@ TODO: Rewrite to better address what we tried.
 
 ## Approach 
 ______
+
+<!---
+TODO: [BEFORE WEDS] Rewrite to better address current approach.
+-->
  
 ## Results
 ______
+
+<!---
+TODO: [BEFORE FRIDAY] Fill in.
+-->
 
 #### Features
  - Full graphic user interface with automatic photo library access and an in-app camera and photo selector.
@@ -58,5 +66,13 @@ ______
 ______
 - Apple Developer Documentation 
 
-## List of Work By Each Student 
+<!---
+TODO: [BEFORE FRIDAY] Fill in.
+-->
+
+## Work By Each Student 
 ______
+
+<!---
+TODO: [BEFORE FRIDAY] Fill in.
+-->
