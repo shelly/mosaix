@@ -149,14 +149,14 @@ kernel void findNearestMatches(
             for (uint delta = 0; delta < pointsPerTPA; delta++) {
                 diff += abs(refTPAs[refTPAIndex*pointsPerTPA + delta] - otherTPAs[otherIndex*pointsPerTPA + delta]);
             }
-            if (minDiff == 0.0 || diff < minDiff) {
+            if (minTPAId == 0 || diff < minDiff) {
                 minTPAId = otherIndex;
                 minDiff = diff;
             }
         }
+
         result[refTPAIndex] = minTPAId;
     }
-
 }
 
 

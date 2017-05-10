@@ -258,8 +258,8 @@ class MetalPipeline {
         let paramBuffer = self.device.makeBuffer(bytes: params, length: paramBufferLength)
         commandEncoder.setBuffer(paramBuffer, offset: 0, at: 3)
         
-        let gridSize : MTLSize = MTLSize(width: 9, height: 1, depth: 1)
-        let threadGroupSize : MTLSize = MTLSize(width: 4, height: 1, depth: 1)
+        let gridSize : MTLSize = MTLSize(width: 4, height: 1, depth: 1)
+        let threadGroupSize : MTLSize = MTLSize(width: 512, height: 1, depth: 1)
         commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
         commandEncoder.endEncoding()
         
