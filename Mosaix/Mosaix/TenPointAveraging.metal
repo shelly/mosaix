@@ -13,9 +13,7 @@ using namespace metal;
 
 // Thread ID == (thread position in thread group) + (thread group position in grid * threads per thread group)
 
-// Each threadgroup handles a different section of the image.
-
-kernel void findNinePointAverage(
+kernel void findNinePointAverageSingleThreadGroup(
     texture2d<float, access::read> image [[ texture(0) ]],
     device uint* result [[ buffer(0) ]],
     uint threadId [[ thread_position_in_threadgroup ]],
@@ -57,7 +55,7 @@ kernel void findNinePointAverage(
     }
 }
 
-kernel void findNinePointAverageAcrossThreadGroups(
+kernel void findNinePointAverage(
                                  texture2d<float, access::read> image [[ texture(0) ]],
                                  device uint* result [[ buffer(0) ]],
                                  uint threadId [[ thread_position_in_threadgroup ]],
@@ -93,11 +91,12 @@ kernel void findNinePointAverageAcrossThreadGroups(
             uint squareRow = (squareIndex / squaresInRow);
             uint squareCol = squareIndex % squaresInRow;
             
-            uint pixelRow = squareRow * squareHeight;
+            uint pixelRow = squareRow * squareHeight + row;
             
             //Now, process that row of the square.
             for (uint delta = 0; delta < squareWidth; delta++) {
-                uint2 coord = uint2(pixelRow, squareCol*squareWidth + delta);
+                uint pixelCol = squareCol * squareHeight + delta;
+                uint2 coord = uint2(pixelRow, pixelCol);
                 float4 colorAtIndex = image.read(coord);
                 sum += colorAtIndex;
             }
@@ -135,67 +134,36 @@ kernel void findPhotoNinePointAverage(
     const uint gridSize = params[0];
     const uint numRows = params[1];
     const uint numCols = params[2];
-    uint cornerSize = gridSize / 3;
-    uint cornersInRow = 3;
     
-    uint numSquares = numRows * numCols;
+    // The total number of nine-point squares in the entire photo
+    uint ninePointSquares = numRows * numCols * 9;
     
-    for (uint squareIndex = threadId; squareIndex < numSquares; squareIndex += numThreads) {
-        uint squareX = (squareIndex % numCols) * gridSize;
-        uint squareY = (squareIndex / numCols) * gridSize;
-        for (uint i = 0; i < cornersInRow * cornersInRow; i++) {
-            uint cornerX = squareX + (i % cornersInRow) * cornerSize;
-            uint cornerY = squareY + (i / cornersInRow) * cornerSize;
-            
-            float4 sum = float4(0.0, 0.0, 0.0, 0.0);
-            for (uint deltaX = 0; deltaX < cornerSize; deltaX++) {
-                for (uint deltaY = 0; deltaY < cornerSize; deltaY++) {
-//                    sum.r += 1.0 - float(squareIndex % numCols) / float(numCols);
-//                    sum.g += 1.0 - float(squareIndex / numCols) / float(numRows);
-//                    sum.b += 1.0 - float(squareIndex / numCols) / float(numRows);
-                    
-                    sum += image.read(uint2(cornerX + deltaX, cornerY + deltaY));
-                }
+    for (uint squareIndex = threadId; squareIndex < ninePointSquares; squareIndex += numThreads) {
+        float4 sum = float4(0.0, 0.0, 0.0, 0.0);
+        
+        uint gridSquareIndex = squareIndex / 9;
+        uint gridSquareX = (gridSquareIndex % numCols) * gridSize;
+        uint gridSquareY = (gridSquareIndex / numCols) * gridSize;
+        
+        uint ninePointIndex = squareIndex % 9;
+        uint ninePointSize = gridSize / 3;
+        uint ninePointX = gridSquareX + (( ninePointIndex % 3) * ninePointSize);
+        uint ninePointY = gridSquareY + (( ninePointIndex / 3) * ninePointSize);
+        
+        for (uint deltaY = 0; deltaY < ninePointSize; deltaY++) {
+            for (uint deltaX = 0; deltaX < ninePointSize; deltaX++) {
+                                uint2 coord = uint2(ninePointX + deltaX, ninePointY + deltaY);
+                                sum += image.read(coord);
             }
-            sum.r = sum.r * 255 / (cornerSize*cornerSize);
-            sum.g = sum.g * 255 / (cornerSize*cornerSize);
-            sum.b = sum.b * 255 / (cornerSize*cornerSize);
-            
-            result[squareIndex*27 + i*3 + 0] = sum.r;
-            result[squareIndex*27 + i*3 + 1] = sum.g;
-            result[squareIndex*27 + i*3 + 2] = sum.b;
         }
+        sum.r = sum.r * 255 / (ninePointSize * ninePointSize);
+        sum.g = sum.g * 255 / (ninePointSize * ninePointSize);
+        sum.b = sum.b * 255 / (ninePointSize * ninePointSize);
+        
+        result[squareIndex * 3 + 0] = uint(sum.r);
+        result[squareIndex * 3 + 1] = uint(sum.g);
+        result[squareIndex * 3 + 2] = uint(sum.b);
     }
-    
-//    // The total number of nine-point squares in the entire photo
-//    uint ninePointSquares = numRows * numCols * 9;
-//    
-//    for (uint squareIndex = threadId; squareIndex < ninePointSquares; squareIndex += numThreads) {
-//        float4 sum = float4(0.0, 0.0, 0.0, 0.0);
-//        
-//        uint gridSquareIndex = squareIndex / 9;
-//        uint gridSquareX = (gridSquareIndex % numCols) * gridSize;
-//        uint gridSquareY = (gridSquareIndex / numCols) * gridSize;
-//        
-//        uint ninePointIndex = squareIndex % 9;
-//        uint ninePointSize = gridSize / 3;
-//        uint ninePointX = gridSquareX + (( ninePointIndex % 3) * ninePointSize);
-//        uint ninePointY = gridSquareY + (( ninePointIndex / 3) * ninePointSize);
-//        
-//        for (uint deltaY = 0; deltaY < ninePointSize; deltaY++) {
-//            for (uint deltaX = 0; deltaX < ninePointSize; deltaX++) {
-//                //                uint2 coord = uint2(ninePointX + deltaX, ninePointY + deltaY);
-//                //                sum += image.read(coord);
-//            }
-//        }
-//        sum.r = sum.r * 255 / (ninePointSize * ninePointSize);
-//        sum.g = sum.g * 255 / (ninePointSize * ninePointSize);
-//        sum.b = sum.b * 255 / (ninePointSize * ninePointSize);
-//        
-//        result[squareIndex * 3 + 0] = uint(sum.r);
-//        result[squareIndex * 3 + 1] = uint(sum.g);
-//        result[squareIndex * 3 + 2] = uint(sum.b);
-//    }
 }
 
 kernel void findNearestMatches(

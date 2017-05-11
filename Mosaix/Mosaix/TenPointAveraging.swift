@@ -156,8 +156,6 @@ class TenPointAveraging: PhotoProcessor {
                     self.processAllPhotos(userAlbums: userAlbums, complete: {(changed: Bool) -> Void in
                         step("Processing photos")
                         print("processed photos")
-                        print("storage:")
-                        print(self.storage.tpaData)
                         //Save to file
                         if (changed) {
                             self.saveStorageToFile()
@@ -181,21 +179,9 @@ class TenPointAveraging: PhotoProcessor {
     }
     
     func findNearestMatches(results: [UInt32], rows: Int, cols: Int, complete: @escaping ([String]) -> Void) -> Void {
-        print("tpas:")
-        for i in 0 ..< rows {
-            print("\(i): (\(results[27*i]), \(results[27*i + 1]), \(results[27*i + 2])")
-        }
         TenPointAveraging.metal!.processNearestAverages(refTPAs: results, otherTPAs: self.storage.tpaData, rows: rows, cols: cols, threadWidth: 32, complete: {(matchIndexes) -> Void in
-            print("Chosen number: \(matchIndexes[29])")
-            
             var assetIds : [String] = []
-            
-            print("row indexes:")
             for i in 0 ..< matchIndexes.count {
-                if (i % cols == 0) {
-                    print(matchIndexes[i])
-                }
-                
                 assetIds.append(self.storage.tpaIds[Int(matchIndexes[i])])
             }
             
@@ -214,7 +200,6 @@ class TenPointAveraging: PhotoProcessor {
         userAlbums.enumerateObjects({(collection: PHAssetCollection, albumIndex: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             stop.pointee = true
             let options = PHFetchOptions()
-            options.fetchLimit = 10
             let fetchResult = PHAsset.fetchAssets(in: collection, options: options)
             self.totalPhotos = fetchResult.count
             self.photosComplete = 0
@@ -306,16 +291,16 @@ class TenPointAveraging: PhotoProcessor {
         
         print("Trying to load storage from file.\n")
 
-//        let fileURL = try! FileManager.default
-//            .url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
-//            .appendingPathComponent(self.storage.pListPath)
-//        
-//        if let stored = NSKeyedUnarchiver.unarchiveObject(withFile: fileURL.path) as? TPAArray {
-//            
-//            self.storage = stored 
-//            print("self.storage successfully loaded from file.\n")
-//            
-//        }
+        let fileURL = try! FileManager.default
+            .url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+            .appendingPathComponent(self.storage.pListPath)
+        
+        if let stored = NSKeyedUnarchiver.unarchiveObject(withFile: fileURL.path) as? TPAArray {
+            
+            self.storage = stored 
+            print("self.storage successfully loaded from file.\n")
+            
+        }
     }
     
     private func saveStorageToFile() -> Void {
