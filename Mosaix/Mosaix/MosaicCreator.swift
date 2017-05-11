@@ -139,7 +139,6 @@ class MosaicCreator {
                 
                 let imageManager = PHImageManager()
                 step("Retrieving Local Identifiers")
-                UIGraphicsPushContext(self.compositeContext)
                 print("gridSize: \(self._gridSizePoints)")
                 print("image width: \(self.reference.size.width), height: \(self.reference.size.height)")
                 print("rows: \(numRows), cols: \(numCols)")
@@ -161,15 +160,19 @@ class MosaicCreator {
                         options.isSynchronous = true
 //                        print("requesting asset \(row*numCols + col)/\(assetIds.count)")
 //                        print("with assetId \(assetIds[row*numCols + col] )")
+//                        if (col == 0) {
+//                            print("start of row. Asset ID \(assetIds[row*numCols + col])")
+                        //                        }
                         imageManager.requestImage(for: assetData[assetIds[row*numCols + col]]!, targetSize: targetSize, contentMode: PHImageContentMode.aspectFill, options: options, resultHandler: {(result, info) -> Void in
+                            UIGraphicsPushContext(self.compositeContext)
                             let drawRect = CGRect(x: x, y: y, width: Int(rectWidth), height: Int(rectHeight))
 //                            print("drawing to \(drawRect)")
                             result!.draw(in: drawRect)
+                            UIGraphicsPopContext()
 //                            print("drawn!")
                         })
                     }
                 }
-                UIGraphicsPopContext()
                 step("Drawing onto Canvas")
                 self.state = .Complete
                 complete()

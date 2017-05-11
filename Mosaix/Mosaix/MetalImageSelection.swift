@@ -41,7 +41,7 @@ class MetalImageSelection: ImageSelection {
     required init(refImage: UIImage, timer: MosaicCreationTimer) {
         self.state = .NotStarted
         self.referenceImage = refImage
-        self.refCGImage = refImage.cgImage!
+        self.refCGImage = refImage.cgImageWithOrientation()
         self.imageManager = PHImageManager()
         self.allPhotos = nil
         self.skipSize = 0

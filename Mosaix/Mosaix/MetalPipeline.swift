@@ -84,8 +84,8 @@ class MetalPipeline {
         let bufferLength = MemoryLayout<UInt32>.size * bufferCount
         let resultBuffer = self.device.makeBuffer(length: bufferLength)
         commandEncoder.setBuffer(resultBuffer, offset: 0, at: 0)
-        let gridSize : MTLSize = MTLSize(width: 9, height: 1, depth: 1)
-        let threadGroupSize : MTLSize = MTLSize(width: threadWidth, height: 1, depth: 1)
+        let gridSize : MTLSize = MTLSize(width: 1, height: 1, depth: 1)
+        let threadGroupSize : MTLSize = MTLSize(width: 32, height: 1, depth: 1)
         commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
         commandEncoder.endEncoding()
         commandBuffer.addCompletedHandler({(buffer) -> Void in
@@ -114,6 +114,7 @@ class MetalPipeline {
         params.storeBytes(of: UInt32(gridSize), as: UInt32.self)
         params.storeBytes(of: UInt32(rows), toByteOffset: 4, as: UInt32.self)
         params.storeBytes(of: UInt32(cols), toByteOffset: 8, as: UInt32.self)
+        print("PROCESSING ENTIRE PHOTO ROWS: \(rows) COLS: \(cols)")
         let paramBuffer = self.device.makeBuffer(bytes: params, length: paramBufferLength, options: options)
         commandEncoder.setBuffer(paramBuffer, offset: 0, at: 0)
         
@@ -124,7 +125,7 @@ class MetalPipeline {
         let resultBuffer = self.device.makeBuffer(length: bufferLength)
         commandEncoder.setBuffer(resultBuffer, offset: 0, at: 1)
         
-        let gridSize : MTLSize = MTLSize(width: 16, height: 1, depth: 1)
+        let gridSize : MTLSize = MTLSize(width: 1, height: 1, depth: 1)
         let threadGroupSize : MTLSize = MTLSize(width: threadWidth, height: 1, depth: 1)
         commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
         commandEncoder.endEncoding()
@@ -164,7 +165,7 @@ class MetalPipeline {
         let paramBuffer = self.device.makeBuffer(bytes: params, length: paramBufferLength)
         commandEncoder.setBuffer(paramBuffer, offset: 0, at: 3)
         
-        let gridSize : MTLSize = MTLSize(width: 32, height: 1, depth: 1)
+        let gridSize : MTLSize = MTLSize(width: 1, height: 1, depth: 1)
         let threadGroupSize : MTLSize = MTLSize(width: 64, height: 1, depth: 1)
         commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
         commandEncoder.endEncoding()

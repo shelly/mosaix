@@ -20,6 +20,7 @@
 		D888EDBF1E9D93770046AF9F /* MetalImageSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D888EDBE1E9D93770046AF9F /* MetalImageSelection.swift */; };
 		D888EDC41EA1977F0046AF9F /* MosaicCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D888EDC31EA1977F0046AF9F /* MosaicCreator.swift */; };
 		D8A789D31EC4DA6800476642 /* MetalPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8A789D21EC4DA6800476642 /* MetalPipeline.swift */; };
+		D8A789D51EC5145F00476642 /* UIImageFixOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8A789D41EC5145F00476642 /* UIImageFixOrientation.swift */; };
 		D8BDDFC51E9D570200759851 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8BDDFC41E9D570200759851 /* AppDelegate.swift */; };
 		D8BDDFC71E9D570200759851 /* ChoosePhotoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8BDDFC61E9D570200759851 /* ChoosePhotoViewController.swift */; };
 		D8BDDFCA1E9D570200759851 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = D8BDDFC81E9D570200759851 /* Main.storyboard */; };
@@ -64,6 +65,7 @@
 		D888EDBE1E9D93770046AF9F /* MetalImageSelection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalImageSelection.swift; sourceTree = "<group>"; };
 		D888EDC31EA1977F0046AF9F /* MosaicCreator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MosaicCreator.swift; sourceTree = "<group>"; };
 		D8A789D21EC4DA6800476642 /* MetalPipeline.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalPipeline.swift; sourceTree = "<group>"; };
+		D8A789D41EC5145F00476642 /* UIImageFixOrientation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIImageFixOrientation.swift; sourceTree = "<group>"; };
 		D8BDDFC11E9D570200759851 /* Mosaix.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mosaix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8BDDFC41E9D570200759851 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		D8BDDFC61E9D570200759851 /* ChoosePhotoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoosePhotoViewController.swift; sourceTree = "<group>"; };
@@ -146,6 +148,7 @@
 			children = (
 				D888EDC31EA1977F0046AF9F /* MosaicCreator.swift */,
 				D872FD9A1EBEBA18000F4415 /* MosaicCreationTimer.swift */,
+				D8A789D41EC5145F00476642 /* UIImageFixOrientation.swift */,
 			);
 			name = MosaicCreation;
 			sourceTree = "<group>";
@@ -355,6 +358,7 @@
 			files = (
 				D86AD3701EA6BF5100E374BD /* TenPointAveraging.swift in Sources */,
 				D888EDBF1E9D93770046AF9F /* MetalImageSelection.swift in Sources */,
+				D8A789D51EC5145F00476642 /* UIImageFixOrientation.swift in Sources */,
 				D888EDC41EA1977F0046AF9F /* MosaicCreator.swift in Sources */,
 				D888EDBA1E9D8D360046AF9F /* ImageSelection.swift in Sources */,
 				D888EDBD1E9D91EF0046AF9F /* NaiveImageSelection.swift in Sources */,
@@ -525,17 +529,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_OPTIMIZATION = time;
+				ASSETCATALOG_COMPILER_OPTIMIZATION = "";
 				DEVELOPMENT_TEAM = RN25355ML8;
-				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				INFOPLIST_FILE = Mosaix/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MTL_FAST_MATH = YES;
-				MTL_OPTIMIZATION_LEVEL = s;
+				MTL_FAST_MATH = NO;
+				MTL_OPTIMIZATION_LEVEL = 0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.ncce.Mosaix;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
@@ -544,16 +548,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_OPTIMIZATION = time;
+				ASSETCATALOG_COMPILER_OPTIMIZATION = "";
 				DEVELOPMENT_TEAM = RN25355ML8;
-				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				INFOPLIST_FILE = Mosaix/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MTL_FAST_MATH = YES;
-				MTL_OPTIMIZATION_LEVEL = s;
+				MTL_FAST_MATH = NO;
+				MTL_OPTIMIZATION_LEVEL = 0;
 				PRODUCT_BUNDLE_IDENTIFIER = org.ncce.Mosaix;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
