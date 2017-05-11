@@ -35,7 +35,7 @@ struct MosaicCreationConstants {
 class MosaicCreator {
     
     var imageSelector : ImageSelection
-    private let reference : UIImage
+    var reference : UIImage
     private var state : MosaicCreationState
     private var _gridSizePoints : Int
     private var _quality : Int = (MosaicCreationConstants.qualityMax + MosaicCreationConstants.qualityMin)/2
@@ -151,7 +151,7 @@ class MosaicCreator {
                             let drawRect = CGRect(x: col * Int(self._gridSizePoints) + Int(choiceRegion.minX),
                                                   y: row * Int(self._gridSizePoints) + Int(choiceRegion.minY),
                                                   width: Int(rectWidth), height: Int(rectHeight))
-                            print("drawing to \(drawRect)")
+                            //print("drawing to \(drawRect)")
                             result!.draw(in: drawRect)
                         })
                     }

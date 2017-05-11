@@ -10,6 +10,7 @@ import UIKit
 class CreateMosaicViewController: UIViewController {
     
     @IBOutlet weak var imageView: UIImageView!
+    var imagesArray: [UIImage]!
     var image: UIImage!
     var mosaicCreator: MosaicCreator!
     @IBOutlet weak var qualitySlider: UISlider! = UISlider()
@@ -19,6 +20,7 @@ class CreateMosaicViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         imageView.contentMode = UIViewContentMode.scaleAspectFit
+        image = self.imagesArray[0]
         imageView.image = image
         goButton.isHidden = true
         // Do any additional setup after loading the view.
@@ -105,6 +107,7 @@ class CreateMosaicViewController: UIViewController {
         if segue.identifier == "CreateMosaicToCompositePhoto" {
             if let CompositePhotoViewController = segue.destination as? CompositePhotoViewController {
                 CompositePhotoViewController.mosaicCreator = mosaicCreator
+                CompositePhotoViewController.imagesArray = imagesArray
             }
         }
     }
