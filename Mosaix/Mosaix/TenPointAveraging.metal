@@ -46,9 +46,9 @@ kernel void findNinePointAverageSingleThreadGroup(
             }
         }
         
-        squareColor.r = squareColor.r * 255 / (squareHeight * squareWidth);
-        squareColor.g = squareColor.g * 255 / (squareHeight * squareWidth);
-        squareColor.b = squareColor.b * 255 / (squareHeight * squareWidth);
+        squareColor.r = squareColor.r * 1000.0 / (squareHeight * squareWidth);
+        squareColor.g = squareColor.g * 1000.0 / (squareHeight * squareWidth);
+        squareColor.b = squareColor.b * 1000.0 / (squareHeight * squareWidth);
         result[squareIndex * 3 + 0] = squareColor.r;
         result[squareIndex * 3 + 1] = squareColor.g;
         result[squareIndex * 3 + 2] = squareColor.b;
@@ -103,9 +103,9 @@ kernel void findNinePointAverage(
         }
         threadgroup_barrier(mem_flags::mem_device);
         if (numRows > 0) {
-            sum.r = sum.r * 255 / (numRows * squareWidth);
-            sum.g = sum.g * 255 / (numRows * squareWidth);
-            sum.b = sum.b * 255 / (numRows * squareWidth);
+            sum.r = sum.r * 1000.0 / (numRows * squareWidth);
+            sum.g = sum.g * 1000.0 / (numRows * squareWidth);
+            sum.b = sum.b * 1000.0 / (numRows * squareWidth);
             
             atomic_fetch_add_explicit(&red, int(sum.r), memory_order_relaxed);
             atomic_fetch_add_explicit(&green, int(sum.g), memory_order_relaxed);
@@ -152,13 +152,13 @@ kernel void findPhotoNinePointAverage(
         
         for (uint deltaY = 0; deltaY < ninePointSize; deltaY++) {
             for (uint deltaX = 0; deltaX < ninePointSize; deltaX++) {
-                                uint2 coord = uint2(ninePointX + deltaX, ninePointY + deltaY);
-                                sum += image.read(coord);
+                uint2 coord = uint2(ninePointX + deltaX, ninePointY + deltaY);
+                sum += image.read(coord);
             }
         }
-        sum.r = sum.r * 255 / (ninePointSize * ninePointSize);
-        sum.g = sum.g * 255 / (ninePointSize * ninePointSize);
-        sum.b = sum.b * 255 / (ninePointSize * ninePointSize);
+        sum.r = sum.r * 1000.0 / (ninePointSize * ninePointSize);
+        sum.g = sum.g * 1000.0 / (ninePointSize * ninePointSize);
+        sum.b = sum.b * 1000.0 / (ninePointSize * ninePointSize);
         
         result[squareIndex * 3 + 0] = uint(sum.r);
         result[squareIndex * 3 + 1] = uint(sum.g);
@@ -181,27 +181,17 @@ kernel void findNearestMatches(
     for (uint refTPAIndex = threadId; refTPAIndex < refTPACount; refTPAIndex += numThreads) {
         uint minTPAId = 0;
         float minDiff = 0.0;
-        bool isChosen = (refTPAIndex == 29);
-        uint minRGBVal = 255;
         for (uint otherIndex = 0; otherIndex < otherTPACount; otherIndex++) {
             float diff = 0.0;
             for (uint delta = 0; delta < pointsPerTPA; delta++) {
-                uint refRGBVal = refTPAs[refTPAIndex*pointsPerTPA + delta];
-                if (refRGBVal < minRGBVal) {
-                    minRGBVal = refRGBVal;
-                }
-                diff += pow(abs(refRGBVal - otherTPAs[otherIndex*pointsPerTPA + delta]), 2.0);
+                diff += pow(refTPAs[refTPAIndex*pointsPerTPA + delta] - otherTPAs[otherIndex*pointsPerTPA + delta], 2.0);
             }
             if (minTPAId == 0 || diff < minDiff) {
                 minTPAId = otherIndex;
                 minDiff = diff;
             }
         }
-        if (!isChosen || true) {
-            result[refTPAIndex] = minTPAId;
-        } else {
-            result[refTPAIndex] = minRGBVal;
-        }
+        result[refTPAIndex] = minTPAId;
     }
 }
 
