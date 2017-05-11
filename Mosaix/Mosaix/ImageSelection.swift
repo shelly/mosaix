@@ -23,7 +23,7 @@ enum ImageSelectionError: Error {
 }
 
 protocol ImageSelection {
-    init(refImage : UIImage, timer: MosaicCreationTimer)
+    init(refImage : UIImage, timer: MosaicCreationTimer, tpaParallel: Bool)
     var tpa: TenPointAveraging { get }
     var numThreads : Int { get set }
     func preprocess(then complete: @escaping () -> Void) throws -> Void

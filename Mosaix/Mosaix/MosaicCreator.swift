@@ -58,8 +58,7 @@ class MosaicCreator {
         self.timer = MosaicCreationTimer(enabled: true)
         self.imageSelector = selectionParallel
             ? MetalImageSelection(refImage: reference, timer: self.timer, tpaParallel: tpaParallel)
-            : NaiveImageSelection(refImage: reference, timer: self.timer)
-        
+            : NaiveImageSelection(refImage: reference, timer: self.timer, tpaParallel: tpaParallel)
         self.totalGridSpaces = 0
         self.gridSpacesFilled = 0
         

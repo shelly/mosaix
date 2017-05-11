@@ -276,17 +276,19 @@ class MetalPipeline {
 
 class TenPointAveraging: PhotoProcessor {
     private var inProgress : Bool
-    private var storage : TPAArray
+    private var storage: TPAStorage
     private static var imageManager : PHImageManager?
     private var totalPhotos : Int
     private var photosComplete : Int
     static var metal : MetalPipeline? = nil
     private var timer : MosaicCreationTimer
+    private var parallel: Bool
     var threadWidth : Int = 1
     
     required init(timer: MosaicCreationTimer, parallel: Bool) {
         self.inProgress = false
-        self.storage = parallel ? TPAArray() : TPADictionary()
+        self.parallel = parallel
+        self.storage = self.parallel ? TPAArray() : TPADictionary()
         self.totalPhotos = 0
         self.photosComplete = 0
         self.timer = timer
@@ -312,8 +314,8 @@ class TenPointAveraging: PhotoProcessor {
                 switch status {
                 case .authorized:
                     let userAlbumsOptions = PHFetchOptions()
-                    userAlbumsOptions.predicate = NSPredicate(format: "estimatedAssetCount > 0")
-                    let userAlbums = PHAssetCollection.fetchAssetCollections(with: PHAssetCollectionType.album, subtype: PHAssetCollectionSubtype.albumSyncedAlbum, options: userAlbumsOptions)
+                    //userAlbumsOptions.predicate = NSPredicate(format: "estimatedAssetCount > 0")
+                    let userAlbums = PHAssetCollection.fetchAssetCollections(with: PHAssetCollectionType.smartAlbum, subtype: PHAssetCollectionSubtype.smartAlbumUserLibrary, options: userAlbumsOptions)
                     step("Fetching albums.")
                     print("fetched albums")
                     self.processAllPhotos(userAlbums: userAlbums, complete: {(changed: Bool) -> Void in
@@ -352,6 +354,7 @@ class TenPointAveraging: PhotoProcessor {
 
     private func processAllPhotos(userAlbums: PHFetchResult<PHAssetCollection>, complete: @escaping (_ changed: Bool) -> Void) {
         var changed: Bool = false
+        var i: Int = 0
         userAlbums.enumerateObjects({(collection: PHAssetCollection, albumIndex: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             stop.pointee = true
             let options = PHFetchOptions()
@@ -369,6 +372,11 @@ class TenPointAveraging: PhotoProcessor {
             }
             
             fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
+                i += 1
+                if (i > 150) {
+                    stop.pointee = true
+                    complete(changed)
+                }
                 if (asset.mediaType == .image && !self.storage.isMember(asset.localIdentifier)) {
                     //Asynchronously grab image and save the values.
                     changed = true

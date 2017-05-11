@@ -11,9 +11,9 @@ import UIKit
 class OptionsViewController: UIViewController {
     
     @IBOutlet var tpaSwitch: UISwitch! = UISwitch()
-    var tpaSwitchParallel: Bool
+    var tpaSwitchParallel: Bool = true
     @IBOutlet var selectionSwitch: UISwitch! = UISwitch()
-    var selectionSwitch: Bool
+    var selectionSwitchParallel: Bool = true 
 
     override func viewDidLoad() {
         super.viewDidLoad()

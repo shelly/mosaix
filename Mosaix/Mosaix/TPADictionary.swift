@@ -10,19 +10,23 @@ import Foundation
 import Photos
 
 class TPADictionary : NSObject, TPAStorage {
-    
 
     public var pListPath = "dictionary.plist"
     private var averages : [String : TenPointAverage]
+    var tpaIds: [String]
+    var tpaData : [UInt32]
 
     
     required override init() {
         self.averages = [:]
+        self.tpaIds = []
+        self.tpaData = []
         super.init()
     }
     
     func insert(asset: String, tpa: TenPointAverage) {
         self.averages[asset] = tpa
+        self.tpaIds.append(asset)
     }
     
     func isMember(_ asset: String) -> Bool {
@@ -50,7 +54,8 @@ class TPADictionary : NSObject, TPAStorage {
     
     required init?(coder aDecoder: NSCoder) {
         print("Decoding averages")
-        self.averages = [:]
+        self.tpaIds = aDecoder.decodeObject(forKey: "tpaIds") as! [String]
+        self.tpaData = aDecoder.decodeObject(forKey: "tpaData") as! [UInt32]
         self.averages = aDecoder.decodeObject(forKey: "identifier_averages") as! [String : TenPointAverage]
     }
     
@@ -58,6 +63,8 @@ class TPADictionary : NSObject, TPAStorage {
     func encode(with aCoder: NSCoder) -> Void{
         print("Trying to encode averages")
         aCoder.encode(self.averages, forKey: "identifier_averages")
+        aCoder.encode(self.tpaIds, forKey: "tpaIds")
+        aCoder.encode(self.tpaData, forKey: "tpaData")
         print("Averages encoded")
     }
     

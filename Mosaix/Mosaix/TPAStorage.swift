@@ -13,6 +13,8 @@ import Photos
 protocol TPAStorage : NSCoding {
     
     var pListPath : String {get set}
+    var tpaIds: [String] {get set}
+    var tpaData : [UInt32] {get set}
     
     init()
     func insert(asset : String, tpa: TenPointAverage) -> Void
