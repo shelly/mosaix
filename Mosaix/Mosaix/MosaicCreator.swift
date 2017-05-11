@@ -25,7 +25,7 @@ enum MosaicCreationError: Error {
 }
 
 struct MosaicCreationConstants {
-    static let gridSizeMin = 2
+    static let gridSizeMin = 3 // must be at least 3 for TPA to work
     static let gridSizeMax = 75
     
     static let qualityMin = 1
@@ -83,7 +83,7 @@ class MosaicCreator {
                     throw MosaicCreationError.GridSizeOutOfBounds
             }
             let spacesInRow = (MosaicCreationConstants.gridSizeMax - gridSizePoints) + 10
-            self._gridSizePoints = Int(min(self.reference.size.width, self.reference.size.height)) / spacesInRow
+            self._gridSizePoints = max(Int(min(self.reference.size.width, self.reference.size.height)) / spacesInRow, MosaicCreationConstants.gridSizeMin)
     }
     
     func getQuality() -> Int {
@@ -108,6 +108,7 @@ class MosaicCreator {
             self.state = .PreprocessingInProgress
             try self.imageSelector.preprocess(then: {() -> Void in
                 self.state = .PreprocessingComplete
+                print("done preprocessing. array:")
                 complete()
             })
         }
@@ -129,6 +130,7 @@ class MosaicCreator {
             {(assetIds) -> Void in
                 //                print("Found \(assetIds.count) asset IDs.")
                 step("Selecting nearest matches")
+                print("Chosen asset: \(assetIds[29])")
                 var assetData : [String : PHAsset] = [:]
                 let choiceAssets = PHAsset.fetchAssets(withLocalIdentifiers: assetIds, options: nil)
                 choiceAssets.enumerateObjects({ (asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) in
@@ -157,9 +159,6 @@ class MosaicCreator {
 //                        print("requesting image of size \(targetSize)")
                         let options = PHImageRequestOptions()
                         options.isSynchronous = true
-                        if (col == 0) {
-                            print("row \(row) starts at asset number \(row*numCols + col)")
-                        }
 //                        print("requesting asset \(row*numCols + col)/\(assetIds.count)")
 //                        print("with assetId \(assetIds[row*numCols + col] )")
                         imageManager.requestImage(for: assetData[assetIds[row*numCols + col]]!, targetSize: targetSize, contentMode: PHImageContentMode.aspectFill, options: options, resultHandler: {(result, info) -> Void in

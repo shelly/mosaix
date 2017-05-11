@@ -89,9 +89,13 @@ class MetalPipeline {
         commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
         commandEncoder.endEncoding()
         commandBuffer.addCompletedHandler({(buffer) -> Void in
-            let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: bufferCount))
-            //            print("\(results)")
-            complete(results)
+            if (buffer.error != nil) {
+                print("There was an error completing an image texture: \(buffer.error!.localizedDescription)")
+            } else {
+                let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: bufferCount))
+                //            print("\(results)")
+                complete(results)
+            }
         })
         commandBuffer.commit()
     }
@@ -106,6 +110,7 @@ class MetalPipeline {
         let paramBufferLength = MemoryLayout<UInt32>.size * 3;
         let options = MTLResourceOptions()
         let params = UnsafeMutableRawPointer.allocate(bytes: paramBufferLength, alignedTo: 1)
+        print("gridSize: \(gridSize)")
         params.storeBytes(of: UInt32(gridSize), as: UInt32.self)
         params.storeBytes(of: UInt32(rows), toByteOffset: 4, as: UInt32.self)
         params.storeBytes(of: UInt32(cols), toByteOffset: 8, as: UInt32.self)
@@ -119,14 +124,18 @@ class MetalPipeline {
         let resultBuffer = self.device.makeBuffer(length: bufferLength)
         commandEncoder.setBuffer(resultBuffer, offset: 0, at: 1)
         
-        let gridSize : MTLSize = MTLSize(width: 9, height: 1, depth: 1)
+        let gridSize : MTLSize = MTLSize(width: 16, height: 1, depth: 1)
         let threadGroupSize : MTLSize = MTLSize(width: threadWidth, height: 1, depth: 1)
         commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
         commandEncoder.endEncoding()
         commandBuffer.addCompletedHandler({(buffer) -> Void in
-            let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: bufferCount))
-            //            print("\(results)")
-            complete(results)
+            if (buffer.error != nil) {
+                print("There was an error finding the TPA of the reference photo: \(buffer.error!.localizedDescription)")
+            } else {
+                let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: bufferCount))
+//                print("\(results)")
+                complete(results)
+            }
         })
         commandBuffer.commit()
     }

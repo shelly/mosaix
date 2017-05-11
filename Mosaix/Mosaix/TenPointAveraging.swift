@@ -162,6 +162,8 @@ class TenPointAveraging: PhotoProcessor {
                         if (changed) {
                             self.saveStorageToFile()
                             step("Saving to file.")
+                            print("storage:")
+                            print(self.storage.tpaData)
                         }
                         DispatchQueue.main.async {
                             complete()
@@ -182,6 +184,7 @@ class TenPointAveraging: PhotoProcessor {
     
     func findNearestMatches(results: [UInt32], rows: Int, cols: Int, complete: @escaping ([String]) -> Void) -> Void {
         TenPointAveraging.metal!.processNearestAverages(refTPAs: results, otherTPAs: self.storage.tpaData, rows: rows, cols: cols, threadWidth: 32, complete: {(matchIndexes) -> Void in
+            print("Chosen number: \(matchIndexes[29])")
             complete(matchIndexes.map({(tpaIndex) -> String in
                 return self.storage.tpaIds[Int(tpaIndex)]
             }))

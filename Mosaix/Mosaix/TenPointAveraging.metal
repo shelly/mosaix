@@ -75,9 +75,9 @@ kernel void findNinePointAverage(
         int numWorkers = min(threadsInGroup, squareHeight);
         
         if (threadId == 0) {
-            result[squareIndex * 3 + 0] = uint(atomic_load_explicit(&red, memory_order_relaxed) / numWorkers);
-            result[squareIndex * 3 + 1] = uint(atomic_load_explicit(&green, memory_order_relaxed) / numWorkers);
-            result[squareIndex * 3 + 2] = uint(atomic_load_explicit(&blue, memory_order_relaxed) / numWorkers);
+            result[squareIndex * 3 + 0] = uint(squareIndex); //uint(atomic_load_explicit(&red, memory_order_relaxed) / numWorkers);
+            result[squareIndex * 3 + 1] = uint(squareIndex); //uint(atomic_load_explicit(&green, memory_order_relaxed) / numWorkers);
+            result[squareIndex * 3 + 2] = uint(squareIndex); //uint(atomic_load_explicit(&blue, memory_order_relaxed) / numWorkers);
         }
     }
 }
@@ -91,8 +91,8 @@ kernel void findPhotoNinePointAverage(
 ) {
     
     const uint gridSize = params[0];
-    const uint numCols = params[1];
-    const uint numRows = params[2];
+    const uint numRows = params[1];
+    const uint numCols = params[2];
     
     
     // The total number of nine-point squares in the entire photo
@@ -113,16 +113,16 @@ kernel void findPhotoNinePointAverage(
         for (uint deltaY = 0; deltaY < ninePointSize; deltaY++) {
             for (uint deltaX = 0; deltaX < ninePointSize; deltaX++) {
                 uint2 coord = uint2(ninePointX + deltaX, ninePointY + deltaY);
-                sum += image.read(coord);
+                sum += image.read(uint2(ninePointX, ninePointY));
             }
         }
         sum.r = sum.r * 255 / (ninePointSize * ninePointSize);
         sum.g = sum.g * 255 / (ninePointSize * ninePointSize);
         sum.b = sum.b * 255 / (ninePointSize * ninePointSize);
         
-        result[squareIndex * 3 + 0] = uint(sum.r);
-        result[squareIndex * 3 + 1] = uint(sum.g);
-        result[squareIndex * 3 + 2] = uint(sum.b);
+        result[squareIndex * 3 + 0] = uint(squareIndex); // uint(sum.r);
+        result[squareIndex * 3 + 1] = uint(squareIndex);//sum.g);
+        result[squareIndex * 3 + 2] = uint(squareIndex);//sum.b);
     }
 }
 
@@ -137,23 +137,31 @@ kernel void findNearestMatches(
     const uint pointsPerTPA = 9 * 3;
     uint refTPACount = params[0] / pointsPerTPA;
     uint otherTPACount = params[1] / pointsPerTPA;
-    uint cols = params[2];
     
     for (uint refTPAIndex = threadId; refTPAIndex < refTPACount; refTPAIndex += numThreads) {
         uint minTPAId = 0;
         float minDiff = 0.0;
+        bool isChosen = (refTPAIndex == 29);
+        uint minRGBVal = 255;
         for (uint otherIndex = 0; otherIndex < otherTPACount; otherIndex++) {
             float diff = 0.0;
             for (uint delta = 0; delta < pointsPerTPA; delta++) {
-                diff += abs(refTPAs[refTPAIndex*pointsPerTPA + delta] - otherTPAs[otherIndex*pointsPerTPA + delta]);
+                uint refRGBVal = refTPAs[refTPAIndex*pointsPerTPA + delta];
+                if (refRGBVal < minRGBVal) {
+                    minRGBVal = refRGBVal;
+                }
+                diff += abs(refRGBVal - otherTPAs[otherIndex*pointsPerTPA + delta]);
             }
             if (minTPAId == 0 || diff < minDiff) {
                 minTPAId = otherIndex;
                 minDiff = diff;
             }
         }
-
-        result[refTPAIndex] = minTPAId;
+        if (!isChosen || true) {
+            result[refTPAIndex] = minTPAId;
+        } else {
+            result[refTPAIndex] = minRGBVal;
+        }
     }
 }
 

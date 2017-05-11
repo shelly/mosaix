@@ -104,6 +104,7 @@ class MetalImageSelection: ImageSelection {
         let texture = try TenPointAveraging.metal!.getImageTexture(image: self.refCGImage)
         TenPointAveraging.metal!.processEntirePhotoTexture(texture: texture, gridSize: gridSizePoints, numGridSpaces: numGridSpaces, rows: numRows,
                                                            cols: numCols,  threadWidth: 32, complete: {(results) -> Void in
+            print("Ok here's the chosen one: (\(results[27*29]), \(results[27*29+1]), \(results[27*29+2]))")
             print("finding nearest matches...")
             self.tpa.findNearestMatches(results: results, rows: numRows, cols: numCols, complete: onSelect)
 //            let numRows : Int = Int(self.referenceImage.size.height) / gridSizePoints
