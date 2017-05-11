@@ -11,8 +11,8 @@ class CompositePhotoViewController: UIViewController {
     var mosaicCreator: MosaicCreator!
     @IBOutlet weak var compositePhoto: UIImageView! = UIImageView()
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
         print("beginning mosaic")
         self.compositePhoto.image = self.mosaicCreator.compositeImage
         

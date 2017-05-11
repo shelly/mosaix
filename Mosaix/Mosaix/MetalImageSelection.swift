@@ -102,9 +102,10 @@ class MetalImageSelection: ImageSelection {
         }
         
         let texture = try TenPointAveraging.metal!.getImageTexture(image: self.refCGImage)
-        TenPointAveraging.metal!.processEntirePhotoTexture(texture: texture, gridSize: gridSizePoints, numGridSpaces: numGridSpaces,  threadWidth: 32, complete: {(results) -> Void in
+        TenPointAveraging.metal!.processEntirePhotoTexture(texture: texture, gridSize: gridSizePoints, numGridSpaces: numGridSpaces, rows: numRows,
+                                                           cols: numCols,  threadWidth: 32, complete: {(results) -> Void in
             print("finding nearest matches...")
-            self.tpa.findNearestMatches(results: results, numGridSpaces: numGridSpaces, complete: onSelect)
+            self.tpa.findNearestMatches(results: results, rows: numRows, cols: numCols, complete: onSelect)
 //            let numRows : Int = Int(self.referenceImage.size.height) / gridSizePoints
 //            let numCols : Int = Int(self.referenceImage.size.width) / gridSizePoints
 //            for threadId in 0 ..< self.numThreads {

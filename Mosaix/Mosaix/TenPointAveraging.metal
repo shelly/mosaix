@@ -90,23 +90,20 @@ kernel void findPhotoNinePointAverage(
      uint numThreads [[ threads_per_grid ]]
 ) {
     
-    const int imageWidth = image.get_width();
-    const int imageHeight = image.get_height();
-    
     const uint gridSize = params[0];
+    const uint numCols = params[1];
+    const uint numRows = params[2];
     
-    uint gridSquaresInRow = imageWidth / gridSize;
-    uint gridSquaresInCol = imageHeight / gridSize;
     
     // The total number of nine-point squares in the entire photo
-    uint ninePointSquares = gridSquaresInRow * gridSquaresInCol * 9;
+    uint ninePointSquares = numRows * numCols * 9;
     
     for (uint squareIndex = threadId; squareIndex < ninePointSquares; squareIndex += numThreads) {
         float4 sum = float4(0.0, 0.0, 0.0, 0.0);
         
         uint gridSquareIndex = squareIndex / 9;
-        uint gridSquareX = (gridSquareIndex % gridSquaresInRow) * gridSize;
-        uint gridSquareY = (gridSquareIndex / gridSquaresInRow) * gridSize;
+        uint gridSquareX = (gridSquareIndex % numCols) * gridSize;
+        uint gridSquareY = (gridSquareIndex / numCols) * gridSize;
         
         uint ninePointIndex = squareIndex % 9;
         uint ninePointSize = gridSize / 3;
@@ -140,6 +137,7 @@ kernel void findNearestMatches(
     const uint pointsPerTPA = 9 * 3;
     uint refTPACount = params[0] / pointsPerTPA;
     uint otherTPACount = params[1] / pointsPerTPA;
+    uint cols = params[2];
     
     for (uint refTPAIndex = threadId; refTPAIndex < refTPACount; refTPAIndex += numThreads) {
         uint minTPAId = 0;

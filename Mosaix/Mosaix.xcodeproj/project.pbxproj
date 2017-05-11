@@ -19,6 +19,7 @@
 		D888EDBD1E9D91EF0046AF9F /* NaiveImageSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D888EDBC1E9D91EF0046AF9F /* NaiveImageSelection.swift */; };
 		D888EDBF1E9D93770046AF9F /* MetalImageSelection.swift in Sources */ = {isa = PBXBuildFile; fileRef = D888EDBE1E9D93770046AF9F /* MetalImageSelection.swift */; };
 		D888EDC41EA1977F0046AF9F /* MosaicCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D888EDC31EA1977F0046AF9F /* MosaicCreator.swift */; };
+		D8A789D31EC4DA6800476642 /* MetalPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8A789D21EC4DA6800476642 /* MetalPipeline.swift */; };
 		D8BDDFC51E9D570200759851 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8BDDFC41E9D570200759851 /* AppDelegate.swift */; };
 		D8BDDFC71E9D570200759851 /* ChoosePhotoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8BDDFC61E9D570200759851 /* ChoosePhotoViewController.swift */; };
 		D8BDDFCA1E9D570200759851 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = D8BDDFC81E9D570200759851 /* Main.storyboard */; };
@@ -62,6 +63,7 @@
 		D888EDBC1E9D91EF0046AF9F /* NaiveImageSelection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NaiveImageSelection.swift; sourceTree = "<group>"; };
 		D888EDBE1E9D93770046AF9F /* MetalImageSelection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalImageSelection.swift; sourceTree = "<group>"; };
 		D888EDC31EA1977F0046AF9F /* MosaicCreator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MosaicCreator.swift; sourceTree = "<group>"; };
+		D8A789D21EC4DA6800476642 /* MetalPipeline.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetalPipeline.swift; sourceTree = "<group>"; };
 		D8BDDFC11E9D570200759851 /* Mosaix.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mosaix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8BDDFC41E9D570200759851 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		D8BDDFC61E9D570200759851 /* ChoosePhotoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoosePhotoViewController.swift; sourceTree = "<group>"; };
@@ -124,6 +126,7 @@
 				D86AD36F1EA6BF5100E374BD /* TenPointAveraging.swift */,
 				D86AD3731EA7D65C00E374BD /* TenPointAveraging.metal */,
 				D86AD3711EA6BF5B00E374BD /* PhotoProcessor.swift */,
+				D8A789D21EC4DA6800476642 /* MetalPipeline.swift */,
 			);
 			name = PhotoProcessor;
 			sourceTree = "<group>";
@@ -364,6 +367,7 @@
 				D8BDDFC51E9D570200759851 /* AppDelegate.swift in Sources */,
 				D84015021EBCFBFE004A3C44 /* TPAStorage.swift in Sources */,
 				E756AFC91E9D958A005E2950 /* CompositePhotoViewController.swift in Sources */,
+				D8A789D31EC4DA6800476642 /* MetalPipeline.swift in Sources */,
 				D872FD9B1EBEBA18000F4415 /* MosaicCreationTimer.swift in Sources */,
 				E756AFCB1E9D95C8005E2950 /* CreateMosaicViewController.swift in Sources */,
 				D86AD3721EA6BF5B00E374BD /* PhotoProcessor.swift in Sources */,
