@@ -43,7 +43,7 @@ class MosaicCreationTimer {
         if (report) {
             print("\nMosaic Creation Tasks:")
             print("---------------------------------------------------------")
-            print("|             Step                    |   Elapsed Time  |")
+            print("| Step                                |   Elapsed Time   |")
             for (identifier, steps) in self.tasks {
                 print("---------------------------------------------------------")
                 print("| \(identifier)")

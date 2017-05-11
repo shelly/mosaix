@@ -16,8 +16,8 @@ class CompositePhotoViewController: UIViewController {
     var canSavePhoto = false
     var results: [UIImage] = []
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
         print("beginning mosaic")
         self.compositePhoto.contentMode = UIViewContentMode.scaleAspectFit
         self.compositePhotoImage = self.mosaicCreator.compositeImage

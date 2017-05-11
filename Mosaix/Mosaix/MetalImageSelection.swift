@@ -41,7 +41,7 @@ class MetalImageSelection: ImageSelection {
     required init(refImage: UIImage, timer: MosaicCreationTimer) {
         self.state = .NotStarted
         self.referenceImage = refImage
-        self.refCGImage = refImage.cgImage!
+        self.refCGImage = refImage.cgImageWithOrientation()
         self.imageManager = PHImageManager()
         self.allPhotos = nil
         self.skipSize = 0
@@ -102,9 +102,11 @@ class MetalImageSelection: ImageSelection {
         }
         
         let texture = try TenPointAveraging.metal!.getImageTexture(image: self.refCGImage)
-        TenPointAveraging.metal!.processEntirePhotoTexture(texture: texture, gridSize: gridSizePoints, numGridSpaces: numGridSpaces,  threadWidth: 32, complete: {(results) -> Void in
+        TenPointAveraging.metal!.processEntirePhotoTexture(texture: texture, gridSize: gridSizePoints, numGridSpaces: numGridSpaces, rows: numRows,
+                                                           cols: numCols,  threadWidth: 32, complete: {(results) -> Void in
+            print("Ok here's the chosen one: (\(results[27*29]), \(results[27*29+1]), \(results[27*29+2]))")
             print("finding nearest matches...")
-            self.tpa.findNearestMatches(results: results, numGridSpaces: numGridSpaces, complete: onSelect)
+            self.tpa.findNearestMatches(results: results, rows: numRows, cols: numCols, complete: onSelect)
 //            let numRows : Int = Int(self.referenceImage.size.height) / gridSizePoints
 //            let numCols : Int = Int(self.referenceImage.size.width) / gridSizePoints
 //            for threadId in 0 ..< self.numThreads {

@@ -13,15 +13,55 @@ using namespace metal;
 
 // Thread ID == (thread position in thread group) + (thread group position in grid * threads per thread group)
 
-// Each threadgroup handles a different section of the image.
-
-kernel void findNinePointAverage(
+kernel void findNinePointAverageSingleThreadGroup(
     texture2d<float, access::read> image [[ texture(0) ]],
     device uint* result [[ buffer(0) ]],
     uint threadId [[ thread_position_in_threadgroup ]],
     uint threadsInGroup [[ threads_per_threadgroup ]],
     uint threadGroupId [[ threadgroup_position_in_grid ]]
 ) {
+    float4 squareColor = float4(0.0, 0.0, 0.0, 0.0);
+    
+    const int squaresInRow = 3;
+    const int imageWidth = image.get_width();
+    const int imageHeight = image.get_height();
+    
+    uint squareHeight = imageHeight / squaresInRow;
+    uint squareWidth = imageWidth / squaresInRow;
+    
+    uint squareIndex = threadId;
+    
+    if (squareIndex < squaresInRow * squaresInRow) {
+        uint squareRow = (squareIndex / squaresInRow);
+        uint squareCol = squareIndex % squaresInRow;
+        
+        for (uint row = 0; row < squareHeight; row += 1) {
+            uint pixelRow = squareHeight * squareRow + row;
+            
+            //Now, process that row of the square.
+            for (uint delta = 0; delta < squareWidth; delta++) {
+                uint pixelCol = squareWidth * squareCol + delta;
+                uint2 coord = uint2(pixelCol, pixelRow);
+                squareColor += image.read(coord);
+            }
+        }
+        
+        squareColor.r = squareColor.r * 255 / (squareHeight * squareWidth);
+        squareColor.g = squareColor.g * 255 / (squareHeight * squareWidth);
+        squareColor.b = squareColor.b * 255 / (squareHeight * squareWidth);
+        result[squareIndex * 3 + 0] = squareColor.r;
+        result[squareIndex * 3 + 1] = squareColor.g;
+        result[squareIndex * 3 + 2] = squareColor.b;
+    }
+}
+
+kernel void findNinePointAverage(
+                                 texture2d<float, access::read> image [[ texture(0) ]],
+                                 device uint* result [[ buffer(0) ]],
+                                 uint threadId [[ thread_position_in_threadgroup ]],
+                                 uint threadsInGroup [[ threads_per_threadgroup ]],
+                                 uint threadGroupId [[ threadgroup_position_in_grid ]]
+                                 ) {
     threadgroup atomic_uint red;
     threadgroup atomic_uint green;
     threadgroup atomic_uint blue;
@@ -51,11 +91,12 @@ kernel void findNinePointAverage(
             uint squareRow = (squareIndex / squaresInRow);
             uint squareCol = squareIndex % squaresInRow;
             
-            uint pixelRow = squareRow * squareHeight;
+            uint pixelRow = squareRow * squareHeight + row;
             
             //Now, process that row of the square.
             for (uint delta = 0; delta < squareWidth; delta++) {
-                uint2 coord = uint2(pixelRow, squareCol*squareWidth + delta);
+                uint pixelCol = squareCol * squareHeight + delta;
+                uint2 coord = uint2(pixelRow, pixelCol);
                 float4 colorAtIndex = image.read(coord);
                 sum += colorAtIndex;
             }
@@ -65,7 +106,7 @@ kernel void findNinePointAverage(
             sum.r = sum.r * 255 / (numRows * squareWidth);
             sum.g = sum.g * 255 / (numRows * squareWidth);
             sum.b = sum.b * 255 / (numRows * squareWidth);
-        
+            
             atomic_fetch_add_explicit(&red, int(sum.r), memory_order_relaxed);
             atomic_fetch_add_explicit(&green, int(sum.g), memory_order_relaxed);
             atomic_fetch_add_explicit(&blue, int(sum.b), memory_order_relaxed);
@@ -90,23 +131,19 @@ kernel void findPhotoNinePointAverage(
      uint numThreads [[ threads_per_grid ]]
 ) {
     
-    const int imageWidth = image.get_width();
-    const int imageHeight = image.get_height();
-    
     const uint gridSize = params[0];
-    
-    uint gridSquaresInRow = imageWidth / gridSize;
-    uint gridSquaresInCol = imageHeight / gridSize;
+    const uint numRows = params[1];
+    const uint numCols = params[2];
     
     // The total number of nine-point squares in the entire photo
-    uint ninePointSquares = gridSquaresInRow * gridSquaresInCol * 9;
+    uint ninePointSquares = numRows * numCols * 9;
     
     for (uint squareIndex = threadId; squareIndex < ninePointSquares; squareIndex += numThreads) {
         float4 sum = float4(0.0, 0.0, 0.0, 0.0);
         
         uint gridSquareIndex = squareIndex / 9;
-        uint gridSquareX = (gridSquareIndex % gridSquaresInRow) * gridSize;
-        uint gridSquareY = (gridSquareIndex / gridSquaresInRow) * gridSize;
+        uint gridSquareX = (gridSquareIndex % numCols) * gridSize;
+        uint gridSquareY = (gridSquareIndex / numCols) * gridSize;
         
         uint ninePointIndex = squareIndex % 9;
         uint ninePointSize = gridSize / 3;
@@ -115,8 +152,8 @@ kernel void findPhotoNinePointAverage(
         
         for (uint deltaY = 0; deltaY < ninePointSize; deltaY++) {
             for (uint deltaX = 0; deltaX < ninePointSize; deltaX++) {
-                uint2 coord = uint2(ninePointX + deltaX, ninePointY + deltaY);
-                sum += image.read(coord);
+                                uint2 coord = uint2(ninePointX + deltaX, ninePointY + deltaY);
+                                sum += image.read(coord);
             }
         }
         sum.r = sum.r * 255 / (ninePointSize * ninePointSize);
@@ -144,18 +181,27 @@ kernel void findNearestMatches(
     for (uint refTPAIndex = threadId; refTPAIndex < refTPACount; refTPAIndex += numThreads) {
         uint minTPAId = 0;
         float minDiff = 0.0;
+        bool isChosen = (refTPAIndex == 29);
+        uint minRGBVal = 255;
         for (uint otherIndex = 0; otherIndex < otherTPACount; otherIndex++) {
             float diff = 0.0;
             for (uint delta = 0; delta < pointsPerTPA; delta++) {
-                diff += abs(refTPAs[refTPAIndex*pointsPerTPA + delta] - otherTPAs[otherIndex*pointsPerTPA + delta]);
+                uint refRGBVal = refTPAs[refTPAIndex*pointsPerTPA + delta];
+                if (refRGBVal < minRGBVal) {
+                    minRGBVal = refRGBVal;
+                }
+                diff += pow(abs(refRGBVal - otherTPAs[otherIndex*pointsPerTPA + delta]), 2.0);
             }
             if (minTPAId == 0 || diff < minDiff) {
                 minTPAId = otherIndex;
                 minDiff = diff;
             }
         }
-
-        result[refTPAIndex] = minTPAId;
+        if (!isChosen || true) {
+            result[refTPAIndex] = minTPAId;
+        } else {
+            result[refTPAIndex] = minRGBVal;
+        }
     }
 }
 
