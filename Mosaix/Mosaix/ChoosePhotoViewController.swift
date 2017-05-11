@@ -12,6 +12,9 @@ import Metal
 class ChoosePhotoViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
     var pickedImage: UIImage!
     var imagePicker = UIImagePickerController()
+
+    var tpaParallel: Bool = true
+    var selectionParallel: Bool = true
     
     
     
@@ -66,6 +69,8 @@ class ChoosePhotoViewController: UIViewController, UINavigationControllerDelegat
         if segue.identifier == "ChoosePhotoToCreateMosaic" {
             if let CreateMosaicViewController = segue.destination as? CreateMosaicViewController {
                 CreateMosaicViewController.image = pickedImage
+                CreateMosaicViewController.tpaParallel = tpaParallel
+                CreateMosaicViewController.selectionParallel = selectionParallel
             }
         }
     }

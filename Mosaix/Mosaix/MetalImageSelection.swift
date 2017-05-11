@@ -129,7 +129,7 @@ class MetalImageSelection: ImageSelection {
 //                    }
 //                }
 //            }
-            }
+//            }
         })
     }
 }

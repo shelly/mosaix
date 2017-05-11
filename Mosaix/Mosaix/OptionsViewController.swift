@@ -36,9 +36,15 @@ class OptionsViewController: UIViewController {
     @IBAction func selectionSwitchChanged() {
         selectionSwitchParallel = (selectionSwitch.isOn) ? true : false
     }
-    
-    @IBAction func onDone() {
-        
+
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "OptionsToChoosePhoto" {
+            if let ChoosePhotoController = segue.destination as? ChoosePhotoViewController {
+                ChoosePhotoController.tpaParallel = tpaSwitchParallel
+                ChoosePhotoController.selectionParallel = selectionSwitchParallel
+            }
+        }
     }
+    
 
 }

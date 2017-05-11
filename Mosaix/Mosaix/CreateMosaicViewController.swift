@@ -16,12 +16,19 @@ class CreateMosaicViewController: UIViewController {
     @IBOutlet weak var sizeSlider: UISlider! = UISlider()
     @IBOutlet weak var goButton: UIButton! = UIButton()
     
+    var tpaParallel: Bool!
+    var selectionParallel: Bool!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         imageView.contentMode = UIViewContentMode.scaleAspectFit
         imageView.image = image
         goButton.isHidden = true
+
         // Do any additional setup after loading the view.
+        
+        //Change tpaParallel and selectionParallel to class properties when naive solutions work
+        //mosaicCreator = MosaicCreator(reference: image, tpaParallel: self.tpaParallel, selectionParallel: self.selectionParallel)
         mosaicCreator = MosaicCreator(reference: image, tpaParallel: true, selectionParallel: true)
         
         do {
