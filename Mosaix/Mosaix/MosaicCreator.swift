@@ -130,7 +130,6 @@ class MosaicCreator {
             {(assetIds) -> Void in
                 //                print("Found \(assetIds.count) asset IDs.")
                 step("Selecting nearest matches")
-                print("Chosen asset: \(assetIds[29])")
                 var assetData : [String : PHAsset] = [:]
                 let choiceAssets = PHAsset.fetchAssets(withLocalIdentifiers: assetIds, options: nil)
                 choiceAssets.enumerateObjects({ (asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) in
@@ -143,41 +142,54 @@ class MosaicCreator {
                 print("image width: \(self.reference.size.width), height: \(self.reference.size.height)")
                 print("rows: \(numRows), cols: \(numCols)")
                 print("Have \(assetIds.count)")
-                for row in 0 ..< numRows {
-                    for col in 0 ..< numCols {
-                        let x = col * self._gridSizePoints
-                        let y = row * self._gridSizePoints
-                        //Make sure that we cover the whole image and don't go over!
-                        let rectWidth = min(Int(self.reference.size.width) - x, self._gridSizePoints)
-                        let rectHeight = min(Int(self.reference.size.height) - y, self._gridSizePoints)
-                        if (rectWidth < 0 || rectHeight < 0) {
-                            print("Warning: (\(row),\(col)) mapping to (\(x),\(y)) <-> (\(rectWidth), \(rectHeight))")
+                
+                let numThreads = 4;
+                var squaresComplete = 0
+                for threadIndex in 0 ..< numThreads {
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        for squareId in stride(from: threadIndex, to: numRows * numCols, by: numThreads) {
+                            let col = squareId % numCols
+                            let row = squareId / numCols
+                            let x = col * self._gridSizePoints
+                            let y = row * self._gridSizePoints
+                            //Make sure that we cover the whole image and don't go over!
+                            let rectWidth = min(Int(self.reference.size.width) - x, self._gridSizePoints)
+                            let rectHeight = min(Int(self.reference.size.height) - y, self._gridSizePoints)
+                            if (rectWidth < 0 || rectHeight < 0) {
+                                print("Warning: (\(row),\(col)) mapping to (\(x),\(y)) <-> (\(rectWidth), \(rectHeight))")
+                            }
+                            //                        print("width \(rectWidth), height \(rectHeight)")
+                            let targetSize = CGSize(width: rectWidth, height: rectHeight)
+                            //                        print("requesting image of size \(targetSize)")
+                            let options = PHImageRequestOptions()
+                            //                        options.isSynchronous = true
+                            //                        print("requesting asset \(row*numCols + col)/\(assetIds.count)")
+                            //                        print("with assetId \(assetIds[row*numCols + col] )")
+                            //                        if (col == 0) {
+                            //                            print("start of row. Asset ID \(assetIds[row*numCols + col])")
+                            //                        }
+                            imageManager.requestImage(for: assetData[assetIds[row*numCols + col]]!, targetSize: targetSize, contentMode: PHImageContentMode.default, options: options, resultHandler: {(result, info) -> Void in
+                                DispatchQueue.main.async {
+                                    UIGraphicsPushContext(self.compositeContext)
+                                    let drawRect = CGRect(x: x, y: y, width: Int(rectWidth), height: Int(rectHeight))
+                                    //                            print("drawing to \(drawRect)")
+                                    result!.draw(in: drawRect)
+                                    UIGraphicsPopContext()
+                                    tick()
+                                    squaresComplete += 1
+                                    if (squaresComplete == numRows * numCols) {
+                                        step("Drawing onto Canvas")
+                                        self.state = .Complete
+                                        complete()
+                                        step("Complete callback")
+                                        self.timer.complete(report: true)
+                                    }
+                                }
+                                //                            print("drawn!")
+                            })
                         }
-//                        print("width \(rectWidth), height \(rectHeight)")
-                        let targetSize = CGSize(width: rectWidth, height: rectHeight)
-//                        print("requesting image of size \(targetSize)")
-                        let options = PHImageRequestOptions()
-                        options.isSynchronous = true
-//                        print("requesting asset \(row*numCols + col)/\(assetIds.count)")
-//                        print("with assetId \(assetIds[row*numCols + col] )")
-//                        if (col == 0) {
-//                            print("start of row. Asset ID \(assetIds[row*numCols + col])")
-                        //                        }
-                        imageManager.requestImage(for: assetData[assetIds[row*numCols + col]]!, targetSize: targetSize, contentMode: PHImageContentMode.aspectFill, options: options, resultHandler: {(result, info) -> Void in
-                            UIGraphicsPushContext(self.compositeContext)
-                            let drawRect = CGRect(x: x, y: y, width: Int(rectWidth), height: Int(rectHeight))
-//                            print("drawing to \(drawRect)")
-                            result!.draw(in: drawRect)
-                            UIGraphicsPopContext()
-//                            print("drawn!")
-                        })
                     }
                 }
-                step("Drawing onto Canvas")
-                self.state = .Complete
-                complete()
-                step("Complete callback")
-                self.timer.complete(report: true)
                 
         })
     }
