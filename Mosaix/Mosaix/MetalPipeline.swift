@@ -95,7 +95,7 @@ class MetalPipeline {
         commandEncoder.setBuffer(paramBuffer, offset: 0, at: 1)
         
         
-        let gridSize : MTLSize = MTLSize(width: 4, height: 1, depth: 1)
+        let gridSize : MTLSize = MTLSize(width: 8, height: 1, depth: 1)
         let threadGroupSize : MTLSize = MTLSize(width: 32, height: 1, depth: 1)
         commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
         commandEncoder.endEncoding()
@@ -134,8 +134,10 @@ class MetalPipeline {
         let resultBuffer = self.device.makeBuffer(length: bufferLength)
         commandEncoder.setBuffer(resultBuffer, offset: 0, at: 1)
         
+
         let gridSize : MTLSize = MTLSize(width: 32, height: 1, depth: 1)
         let threadGroupSize : MTLSize = MTLSize(width: 64, height: 1, depth: 1)
+
         commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
         commandEncoder.endEncoding()
         commandBuffer.addCompletedHandler({(buffer) -> Void in
@@ -177,8 +179,8 @@ class MetalPipeline {
         commandEncoder.setBuffer(paramBuffer, offset: 0, at: 3)
         
         
-        let gridSize : MTLSize = MTLSize(width: 16, height: 1, depth: 1)
-        let threadGroupSize : MTLSize = MTLSize(width: 128, height: 1, depth: 1)
+        let gridSize : MTLSize = MTLSize(width: 8, height: 1, depth: 1)
+        let threadGroupSize : MTLSize = MTLSize(width: 64, height: 1, depth: 1)
         commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
         commandEncoder.endEncoding()
         

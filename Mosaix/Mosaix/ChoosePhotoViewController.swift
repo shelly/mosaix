@@ -8,8 +8,10 @@
 
 import UIKit
 import Metal
+import AVFoundation
 
 class ChoosePhotoViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+    var video: AVURLAsset!
     var pickedImage: UIImage!
     var imagePicker = UIImagePickerController()
     
@@ -27,10 +29,11 @@ class ChoosePhotoViewController: UIViewController, UINavigationControllerDelegat
     
     @IBAction func chooseImage() {
         
-        if UIImagePickerController.isSourceTypeAvailable(.savedPhotosAlbum) {
+        if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
             imagePicker.delegate = self
             imagePicker.allowsEditing = false
-            imagePicker.sourceType = .savedPhotosAlbum
+            imagePicker.sourceType = .photoLibrary
+            imagePicker.mediaTypes = ["public.image", "public.movie"]
             
             present(imagePicker, animated: true, completion: nil)
             
@@ -48,24 +51,36 @@ class ChoosePhotoViewController: UIViewController, UINavigationControllerDelegat
         }
     }
     
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        if (info[UIImagePickerControllerOriginalImage]) != nil{
-            pickedImage = info[UIImagePickerControllerOriginalImage] as! UIImage
-            dismiss(animated: true, completion: { self.performSegue(withIdentifier: "ChoosePhotoToCreateMosaic", sender: self)})
-        }else{
-            dismiss(animated: true, completion: nil)
+    func setMovie(movie: URL) {
+        print("PATH", movie.path)
+        //break down into frame by frame
+        do {
+            self.video = AVURLAsset(url: movie)
+            let generator = AVAssetImageGenerator(asset: self.video)
+            try self.pickedImage = UIImage(cgImage: generator.copyCGImage(at: CMTimeMake(0, video.duration.timescale), actualTime: nil))
+        } catch {
+            print("Issue with taking frame of video.")
         }
     }
     
-    //Restarts the process of picking an image 
-    @IBAction func backToChoosePhoto(for segue: UIStoryboardSegue, sender: Any?) {
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
+        if ((info[UIImagePickerControllerMediaType] as! String) == "public.movie") {
+            //turn movie into an array of UIImages and save to self.pickedImages
+            setMovie(movie: (info[UIImagePickerControllerMediaURL] as! URL))
+        }
+        if ((info[UIImagePickerControllerMediaType] as! String) == "public.image") {
+            pickedImage = (info[UIImagePickerControllerOriginalImage] as! UIImage)
+            
+        }
         
+        dismiss(animated: true, completion: { self.performSegue(withIdentifier: "ChoosePhotoToCreateMosaic", sender: self)})
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "ChoosePhotoToCreateMosaic" {
             if let CreateMosaicViewController = segue.destination as? CreateMosaicViewController {
-                CreateMosaicViewController.image = pickedImage
+                CreateMosaicViewController.video = self.video
+                CreateMosaicViewController.image = self.pickedImage
             }
         }
     }
