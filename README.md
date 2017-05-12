@@ -1,21 +1,21 @@
 # Mosaix - An iOS Photo Mosaic App
 ### Nathan Eliason & Shelly Bensal
-<em>Updated May 10th, 2017</em>
+<em>Updated May 12th, 2017</em>
 
 ## Index
 ______
 
 
-#### 1. [Summary](#summary)
-  - [Features](#features)
-  - [Demo](#demo)
-#### 2. [Background](#background)
-  - [Platform Choice and Resources](#platform)
-  - [Major Challenges](#challenges)
-#### 3. [Approach](#approach)
-#### 4. [Results](#results)
-#### 5. [References](#references)
-#### 6. [Work By Each Student](#work)
+1. [Summary](#summary)
+    - [Features](#features)
+    - [Demo](#demo)
+2. [Background](#background)
+    - [Platform Choice and Resources](#platform)
+    - [Major Challenges](#challenges)
+3. [Approach](#approach)
+4. [Results](#results)
+5. [References](#references)
+6. [Work By Each Student](#work)
 
 ## <a name="summary">Summary</a>
 ______
@@ -151,3 +151,15 @@ ______
 
 ## <a name="work">Work By Each Student</a> 
 ______
+
+Nathan
+<ul>
+<li>A</li>
+<li>B</li>
+</ul>
+
+Shelly
+<ul>
+<li>A</li>
+<li>B</li>
+</ul>
