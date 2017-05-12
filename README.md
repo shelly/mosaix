@@ -1,6 +1,6 @@
 # Mosaix - An iOS Photo Mosaic App
 ### Nathan Eliason & Shelly Bensal
-<em>Updated May 10th, 2017</em>
+<em>Updated May 12th, 2017</em>
 
 ## Index
 ______
@@ -146,3 +146,15 @@ ______
 
 ## <a name="work">Work By Each Student</a> 
 ______
+
+Nathan
+<ul>
+<li>A</li>
+<li>B</li>
+</ul>
+
+Shelly
+<ul>
+<li>A</li>
+<li>B</li>
+</ul>
