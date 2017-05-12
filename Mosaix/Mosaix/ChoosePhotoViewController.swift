@@ -52,7 +52,7 @@ class ChoosePhotoViewController: UIViewController, UINavigationControllerDelegat
     }
     
     func setMovie(movie: URL) {
-        
+        print("PATH", movie.path)
         //break down into frame by frame
         do {
             self.video = AVURLAsset(url: movie)

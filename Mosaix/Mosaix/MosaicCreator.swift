@@ -39,7 +39,7 @@ class MosaicCreator {
     private var state : MosaicCreationState
     private var _gridSizePoints : Int
     private var _quality : Int = (MosaicCreationConstants.qualityMax + MosaicCreationConstants.qualityMin)/2
-    private let compositeContext: CGContext
+    private var compositeContext: CGContext
     var timer : MosaicCreationTimer
     
     private var totalGridSpaces : Int
@@ -50,6 +50,30 @@ class MosaicCreator {
             let cgImage = self.compositeContext.makeImage()!
             return UIImage.init(cgImage: cgImage)
         }
+    }
+    
+    func updateReference(new: UIImage) {
+        
+        self.reference = new
+
+        self.totalGridSpaces = 0
+        self.gridSpacesFilled = 0
+        
+        self.imageSelector.updateRef(new: new)
+
+        
+        UIGraphicsBeginImageContextWithOptions(self.reference.size, false, 0)
+        self.compositeContext = UIGraphicsGetCurrentContext()!
+        UIGraphicsPopContext()
+        
+        
+        do {
+            self._gridSizePoints = 0
+            try self.setGridSizePoints((MosaicCreationConstants.gridSizeMax + MosaicCreationConstants.gridSizeMin)/2)
+        } catch {
+            print("error initializing grid size")
+        }
+        
     }
     
     init(reference: UIImage) {
@@ -116,6 +140,7 @@ class MosaicCreator {
     
     func begin(tick : @escaping () -> Void, complete : @escaping () -> Void) throws -> Void {
         guard (self.state == .PreprocessingComplete || self.state == .Complete) else {
+            print("Invalid state")
             throw MosaicCreationError.InvalidState
         }
         let step = self.timer.task("Photo Mosaic Generation")

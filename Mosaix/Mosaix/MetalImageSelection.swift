@@ -29,8 +29,8 @@ enum MetalSelectionError: Error {
 
 class MetalImageSelection: ImageSelection {
     private var state: MetalProcessingState
-    private var referenceImage : UIImage
-    private var refCGImage : CGImage
+    var referenceImage : UIImage
+    var refCGImage : CGImage
     private var allPhotos : PHFetchResult<PHAsset>?
     private var imageManager : PHImageManager
     private var skipSize : Int
@@ -84,6 +84,7 @@ class MetalImageSelection: ImageSelection {
      */
     func preprocess(then complete: @escaping () -> Void) throws -> Void {
         guard (self.state == .NotStarted || self.state == .PreprocessingComplete) else {
+            print("self.state", self.state)
             throw MetalSelectionError.InvalidProcessingState
         }
         print("Pre-processing library...")
@@ -95,9 +96,15 @@ class MetalImageSelection: ImageSelection {
         })
     }
     
+    func updateRef(new: UIImage) {
+        self.referenceImage = new
+        self.refCGImage = new.cgImageWithOrientation()
+    }
+    
     func select(gridSizePoints: Int, numGridSpaces: Int, numRows: Int, numCols: Int, quality: Int, onSelect: @escaping ([String]) -> Void) throws -> Void {
         //Pre-process library
         guard (self.state == .PreprocessingComplete) else {
+            print("self.state", self.state)
             throw MetalSelectionError.InvalidProcessingState
         }
         
