@@ -75,15 +75,27 @@ class MetalPipeline {
         return texture
     }
     
-    func processImageTexture(texture: MTLTexture, threadWidth: Int, complete : @escaping ([UInt32]) -> Void) {
+    func processImageTexture(texture: MTLTexture, width: Int, height: Int, threadWidth: Int, complete : @escaping ([UInt32]) -> Void) {
         let commandBuffer = self.commandQueue.makeCommandBuffer()
         let commandEncoder = commandBuffer.makeComputeCommandEncoder()
         commandEncoder.setComputePipelineState(self.pipelineState!)
         commandEncoder.setTexture(texture, at: 0)
-        let bufferCount = 3 * 9
+        
+        let bufferCount = 3 * TenPointAverageConstants.numCells
         let bufferLength = MemoryLayout<UInt32>.size * bufferCount
         let resultBuffer = self.device.makeBuffer(length: bufferLength)
         commandEncoder.setBuffer(resultBuffer, offset: 0, at: 0)
+        
+        let paramBufferLength = MemoryLayout<UInt32>.size * 3;
+        let options = MTLResourceOptions()
+        let params = UnsafeMutableRawPointer.allocate(bytes: paramBufferLength, alignedTo: 1)
+        params.storeBytes(of: UInt32(TenPointAverageConstants.gridsAcross), toByteOffset: 0, as: UInt32.self)
+        params.storeBytes(of: UInt32(width), toByteOffset: 4, as: UInt32.self)
+        params.storeBytes(of: UInt32(height), toByteOffset: 8, as: UInt32.self)
+        let paramBuffer = self.device.makeBuffer(bytes: params, length: paramBufferLength, options: options)
+        commandEncoder.setBuffer(paramBuffer, offset: 0, at: 1)
+        
+        
         let gridSize : MTLSize = MTLSize(width: 4, height: 1, depth: 1)
         let threadGroupSize : MTLSize = MTLSize(width: 32, height: 1, depth: 1)
         commandEncoder.dispatchThreadgroups(gridSize, threadsPerThreadgroup: threadGroupSize)
@@ -107,20 +119,21 @@ class MetalPipeline {
         commandEncoder.setTexture(texture, at: 0)
 
         
-        let paramBufferLength = MemoryLayout<UInt32>.size * 3;
+        let paramBufferLength = MemoryLayout<UInt32>.size * 4;
         let options = MTLResourceOptions()
         let params = UnsafeMutableRawPointer.allocate(bytes: paramBufferLength, alignedTo: 1)
         print("gridSize: \(gridSize)")
         params.storeBytes(of: UInt32(gridSize), as: UInt32.self)
         params.storeBytes(of: UInt32(rows), toByteOffset: 4, as: UInt32.self)
         params.storeBytes(of: UInt32(cols), toByteOffset: 8, as: UInt32.self)
+        params.storeBytes(of: UInt32(TenPointAverageConstants.gridsAcross), toByteOffset: 12, as: UInt32.self)
         print("PROCESSING ENTIRE PHOTO ROWS: \(rows) COLS: \(cols)")
         let paramBuffer = self.device.makeBuffer(bytes: params, length: paramBufferLength, options: options)
         commandEncoder.setBuffer(paramBuffer, offset: 0, at: 0)
         
         
         print("num grid squares: \(numGridSpaces)")
-        let bufferCount = 3 * 9 * numGridSpaces
+        let bufferCount = 3 * TenPointAverageConstants.numCells * numGridSpaces
         let bufferLength = MemoryLayout<UInt32>.size * bufferCount
         let resultBuffer = self.device.makeBuffer(length: bufferLength)
         commandEncoder.setBuffer(resultBuffer, offset: 0, at: 1)
@@ -141,7 +154,7 @@ class MetalPipeline {
         commandBuffer.commit()
     }
     
-    func processNearestAverages(refTPAs: [UInt32], otherTPAs: [UInt32], rows: Int, cols: Int, threadWidth: Int, complete: @escaping([UInt32]) -> Void) {
+    func processNearestAverages(refTPAs: [UInt32], otherTPAs: [UInt32], rows: Int, cols: Int, threadWidth: Int, complete: @escaping([UInt32], [Float32]) -> Void) {
         let commandBuffer = self.commandQueue.makeCommandBuffer()
         let commandEncoder = commandBuffer.makeComputeCommandEncoder()
         commandEncoder.setComputePipelineState(self.matchesPipelineState!)
@@ -156,14 +169,19 @@ class MetalPipeline {
         let resultBuffer = self.device.makeBuffer(length: resultBufferLength)
         commandEncoder.setBuffer(resultBuffer, offset: 0, at: 2)
         
-        let paramBufferLength = MemoryLayout<UInt32>.size * 3;
+        let paramBufferLength = MemoryLayout<UInt32>.size * 4;
         let params = UnsafeMutableRawPointer.allocate(bytes: MemoryLayout<UInt32>.size, alignedTo: 1)
         //        print("params: [\(refTPAs.count), \(otherTPAs.count)]")
-        params.storeBytes(of: UInt32(refTPAs.count), as: UInt32.self)
-        params.storeBytes(of: UInt32(otherTPAs.count), toByteOffset: 4, as: UInt32.self)
-        params.storeBytes(of: UInt32(cols), toByteOffset: 8, as: UInt32.self)
+        params.storeBytes(of: UInt32(TenPointAverageConstants.numCells), as: UInt32.self)
+        params.storeBytes(of: UInt32(refTPAs.count), toByteOffset: 4, as: UInt32.self)
+        params.storeBytes(of: UInt32(otherTPAs.count), toByteOffset: 8, as: UInt32.self)
+        params.storeBytes(of: UInt32(cols), toByteOffset: 12, as: UInt32.self)
         let paramBuffer = self.device.makeBuffer(bytes: params, length: paramBufferLength)
         commandEncoder.setBuffer(paramBuffer, offset: 0, at: 3)
+        
+        let diffBuffer = self.device.makeBuffer(length: MemoryLayout<Float32>.size * rows * cols)
+        commandEncoder.setBuffer(diffBuffer, offset: 0, at: 4)
+        
         
         let gridSize : MTLSize = MTLSize(width: 16, height: 1, depth: 1)
         let threadGroupSize : MTLSize = MTLSize(width: 128, height: 1, depth: 1)
@@ -175,8 +193,9 @@ class MetalPipeline {
                 print("There was an error completing the TPA matching: \(buffer.error!.localizedDescription)")
             } else {
                 let results : [UInt32] = Array(UnsafeBufferPointer(start: resultBuffer.contents().assumingMemoryBound(to: UInt32.self), count: rows * cols))
-                //            print("\(results)")
-                complete(results)
+                let diff : [Float32] = Array(UnsafeBufferPointer(start: diffBuffer.contents().assumingMemoryBound(to: Float32.self), count: rows * cols))
+//                            print("\(results)")
+                complete(results, diff)
             }
         })
         //        print("2")

@@ -20,11 +20,12 @@ class TPAArray: NSObject, TPAStorage, NSCoding {
         self.tpaIds = []
         self.tpaData = []
     }
+    
     func insert(asset : String, tpa: TenPointAverage) -> Void {
         self.assets.insert(asset)
         self.tpaIds.append(asset)
-        for i in 0 ..< 3 {
-            for j in 0 ..< 3 {
+        for i in 0 ..< TenPointAverageConstants.gridsAcross {
+            for j in 0 ..< TenPointAverageConstants.gridsAcross {
                 for k in 0 ..< 3 {
                     self.tpaData.append(UInt32(tpa.gridAvg[i][j].get(k)))
                 }

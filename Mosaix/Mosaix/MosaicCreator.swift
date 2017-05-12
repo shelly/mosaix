@@ -25,7 +25,7 @@ enum MosaicCreationError: Error {
 }
 
 struct MosaicCreationConstants {
-    static let gridSizeMin = 3 // must be at least 3 for TPA to work
+    static let gridSizeMin = TenPointAverageConstants.gridsAcross
     static let gridSizeMax = 75
     
     static let qualityMin = 1

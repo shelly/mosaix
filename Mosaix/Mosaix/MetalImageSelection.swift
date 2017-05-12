@@ -56,8 +56,8 @@ class MetalImageSelection: ImageSelection {
             step = self.timer.task("Finding Best Match (\(row), \(col))")
         }
         let refTPA = TenPointAverage()
-        let baseTPAIndex = 3 * 9 * squareIndex
-        for i in 0 ..< 9 {
+        let baseTPAIndex = 3 * TenPointAverageConstants.numCells * squareIndex
+        for i in 0 ..< TenPointAverageConstants.numCells {
             refTPA.gridAvg[i/3][i%3] = RGBFloat(CGFloat(tpaPoints[baseTPAIndex + 3*i]),
                                                 CGFloat(tpaPoints[baseTPAIndex + 3*i + 1]),
                                                 CGFloat(tpaPoints[baseTPAIndex + 3*i + 2]))
@@ -104,8 +104,8 @@ class MetalImageSelection: ImageSelection {
         let texture = try TenPointAveraging.metal!.getImageTexture(image: self.refCGImage)
         TenPointAveraging.metal!.processEntirePhotoTexture(texture: texture, gridSize: gridSizePoints, numGridSpaces: numGridSpaces, rows: numRows,
                                                            cols: numCols,  threadWidth: 32, complete: {(results) -> Void in
-            print("Ok here's the chosen one: (\(results[27*29]), \(results[27*29+1]), \(results[27*29+2]))")
             print("finding nearest matches...")
+//            print(results)
             self.tpa.findNearestMatches(results: results, rows: numRows, cols: numCols, complete: onSelect)
 //            let numRows : Int = Int(self.referenceImage.size.height) / gridSizePoints
 //            let numCols : Int = Int(self.referenceImage.size.width) / gridSizePoints
