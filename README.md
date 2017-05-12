@@ -32,9 +32,9 @@ We created an iOS application which uses the Metal framework to generate photo m
  - Full graphic user interface with automatic photo library access, an in-app camera and photo selector, and the ability to save mosaics.
  - Functional with a Photo Library with between 4 and 15,000 photos.
  - Adjustable grid size and final quality -- letting the user select how large each source image is framed within the final composite photo and how picky the algorithm is in its selection.
- - Naive and basic parallel photo selection algorithms, with an iterative approach to building a robust, performant data structure.
- - Pre-processing of the device's Photo Library that reduces complexity and time of the generation of each individual mosaic, and loading values previously computed from file to decrease the time required for steady-state photo mosaic production.
- - Performance that improves upon existing solutions in the app store. While there are a few apps already that perform similar functions to Mosaix, they consume 30-40s per image to finish processing (depending on grid size and quality).
+ - Naive and basic parallel photo selection algorithms based around universal protocols, with an iterative approach to building a robust, performant data structure behind a parallelized solution.
+ - Pre-processing of the device's Photo Library in the background that reduces complexity and time of the generation of each individual mosaic, and loading values previously computed from file to decrease the time required for steady-state photo mosaic production.
+ - Performance that significantly improves upon existing solutions in the app store. While there are a few apps already that perform similar functions to Mosaix, they consume 30-40s per image to finish processing (depending on grid size and quality).
 - A video processing flow which, given a video, processes the video into frames and applies the photo mosaic algorithm to each frame so that it can be stitched back together into a transformed video.
 
 #### <a name="demo">Demo</a>
@@ -154,12 +154,20 @@ ______
 
 Nathan
 <ul>
-<li>A</li>
-<li>B</li>
+ <li>Implementations of KPA Storage types (multi-dim. trees, dictionaries, and sequences)</li>
+ <li>Implement preprocessing of Photo library on CPU and in Metal kernel</li>
+ <li>Implement K-Point Averaging calculation on CPU and in Metal kernel</li>
+ <li>Nearest-matching on CPU and in Metal kernel and Swift-Metal pipeline</li>
+ <li>Protocols and implementations for K-Point Averaging, Mosaic Creation, and Image Selection (naive + metal)</li>
+ <li>Benchmarking and optimization framework</li>
 </ul>
 
 Shelly
 <ul>
-<li>A</li>
-<li>B</li>
+ <li>Video decomposition for frame-by-frame processing</li>
+ <li>Serializing and deserialization of KPA Trees, Dictionaries, and Sequences to store photo library data to file between app launches</li>
+ <li>App storyboarding, view layout, and UI elements and functionality</li>
+ <li>Photo Library access and management and saving composite mosaics to file</li>
+ <li>Options -- toggling between naive and optimized algorithms</li>
+ <li>Inter-operability between protocols of the algorithm and controllers of the user interface</li>
 </ul>
