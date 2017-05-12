@@ -30,6 +30,7 @@
 		D8BDDFDD1E9D570200759851 /* MosaixTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8BDDFDC1E9D570200759851 /* MosaixTests.swift */; };
 		D8BDDFE81E9D570200759851 /* MosaixUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8BDDFE71E9D570200759851 /* MosaixUITests.swift */; };
 		D8BDDFF61E9D6D4500759851 /* OptionsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8BDDFF51E9D6D4500759851 /* OptionsViewController.swift */; };
+		E725E3361EC5837600E2E119 /* VideoFixOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = E725E3351EC5837600E2E119 /* VideoFixOrientation.swift */; };
 		E756AFC91E9D958A005E2950 /* CompositePhotoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E756AFC81E9D958A005E2950 /* CompositePhotoViewController.swift */; };
 		E756AFCB1E9D95C8005E2950 /* CreateMosaicViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E756AFCA1E9D95C8005E2950 /* CreateMosaicViewController.swift */; };
 /* End PBXBuildFile section */
@@ -81,6 +82,7 @@
 		D8BDDFE71E9D570200759851 /* MosaixUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MosaixUITests.swift; sourceTree = "<group>"; };
 		D8BDDFE91E9D570200759851 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D8BDDFF51E9D6D4500759851 /* OptionsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OptionsViewController.swift; sourceTree = "<group>"; };
+		E725E3351EC5837600E2E119 /* VideoFixOrientation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VideoFixOrientation.swift; sourceTree = "<group>"; };
 		E756AFC81E9D958A005E2950 /* CompositePhotoViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CompositePhotoViewController.swift; sourceTree = "<group>"; };
 		E756AFCA1E9D95C8005E2950 /* CreateMosaicViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CreateMosaicViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -149,6 +151,7 @@
 				D888EDC31EA1977F0046AF9F /* MosaicCreator.swift */,
 				D872FD9A1EBEBA18000F4415 /* MosaicCreationTimer.swift */,
 				D8A789D41EC5145F00476642 /* UIImageFixOrientation.swift */,
+				E725E3351EC5837600E2E119 /* VideoFixOrientation.swift */,
 			);
 			name = MosaicCreation;
 			sourceTree = "<group>";
@@ -372,6 +375,7 @@
 				D84015021EBCFBFE004A3C44 /* TPAStorage.swift in Sources */,
 				E756AFC91E9D958A005E2950 /* CompositePhotoViewController.swift in Sources */,
 				D8A789D31EC4DA6800476642 /* MetalPipeline.swift in Sources */,
+				E725E3361EC5837600E2E119 /* VideoFixOrientation.swift in Sources */,
 				D872FD9B1EBEBA18000F4415 /* MosaicCreationTimer.swift in Sources */,
 				E756AFCB1E9D95C8005E2950 /* CreateMosaicViewController.swift in Sources */,
 				D86AD3721EA6BF5B00E374BD /* PhotoProcessor.swift in Sources */,

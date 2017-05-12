@@ -81,43 +81,36 @@ class CompositePhotoViewController: UIViewController {
         }
     }
     
-    func makeMultipleMosaics(images: [UIImage], i: Int) {
-        if (i >= images.count) {
-            return
-        }
-        else {
-            do {
-                self.mosaicCreator.updateReference(new: images[i])
-                try self.mosaicCreator.begin(tick: {
-                }, complete: {() -> Void in
-                    self.compositePhotoImage = self.mosaicCreator.compositeImage
-                    self.compositePhoto.image = self.compositePhotoImage
-                    self.canSavePhoto = true
-                    self.savePhoto()
-                    self.makeMultipleMosaics(images: images, i: (i + 1))
-                })
-            } catch {
-                print (error)
-            }
+    func makeMosaic(generator: AVAssetImageGenerator, i : Int64) {
+        do {
+            print("i: \(i)")
+            var actual = CMTime()
+            let frameTime = CMTimeMake(i, self.video.duration.timescale)
+            let image = try UIImage(cgImage: generator.copyCGImage(at: frameTime, actualTime: &actual))
+            self.mosaicCreator.updateReference(new: image)
+            try self.mosaicCreator.begin(tick: {
+            }, complete: {() -> Void in
+                self.compositePhotoImage = self.mosaicCreator.compositeImage
+                self.compositePhoto.image = self.compositePhotoImage
+                self.canSavePhoto = true
+                self.savePhoto()
+                self.makeMosaic(generator: generator, i: i + 3000)
+            })
+        } catch {
+            print (error)
         }
     }
     
     func makeMovie() { //Make a movie out of self.video
-        var images: [UIImage] = []
         do {
             let generator = AVAssetImageGenerator(asset: self.video)
-            var i: Int64 = 0
-            while (i < self.video.duration.value) {
-                var frameTime: CMTime = CMTimeMake(i, self.video.duration.timescale)
-                var frameImage: UIImage = try UIImage(cgImage: generator.copyCGImage(at: frameTime, actualTime: nil))
-                images.append(frameImage)
-                i += 20
-            }
+            generator.appliesPreferredTrackTransform = true
+            generator.requestedTimeToleranceBefore = kCMTimeZero
+            generator.requestedTimeToleranceAfter = kCMTimeZero
+            try makeMosaic(generator: generator, i: 1752000)
         } catch {
             print("Issue with taking frame of video.")
         }
-        
-        makeMultipleMosaics(images: images, i: 0)
 
     }
     
