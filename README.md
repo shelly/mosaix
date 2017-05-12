@@ -20,10 +20,10 @@ We created an iOS application which uses the Metal framework to generate photo m
  - Naive and basic parallel photo selection algorithms, with an iterative approach to building a robust, performant data structure.
  - Pre-processing of the device's Photo Library that reduces complexity and time of the generation of each individual mosaic, and loading values previously computed from file to decrease the time required for steady-state photo mosaic production.
  - Performance that improves upon existing solutions in the app store. While there are a few apps already that perform similar functions to Mosaix, they consume 30-40s per image to finish processing (depending on grid size and quality).
-- Processing of a video saved in the Photo Library into frames, and the application of our photo mosaic algorithm to each frame which can then be stitched back together into a photo mosaic'd video.
+- A video processing flow which, given a video, processes the video into frames and applies the photo mosaic algorithm to each frame so that it can be stitched back together into a transformed video.
 
 #### Demo
- - We can demonstrate the app live on an iPhone, by taking a picture live and having the application generate a composite mosaic of that image on the spot with both a naive and parallel implementation.
+ - We demonstrated the app live on an iPhone, by taking an on-the-spot picture and having the application generate a composite mosaic of that image on the spot with both a naive and parallel implementation.
 
 ## Background 
 ______
@@ -42,8 +42,6 @@ In particular, our choice of iOS 10 on iPhone 7 is driven mostly by the inclusio
 - The iPhone 7 is quad-core, but application usage is restricted, and there is no interface to directly schedule jobs to cores. If an application uses too much power, the application is throttled down, so achieving speedup required a balance between utilizing resources and overreaching our limits. 
 - Fetching photos from the Photo Library is bandwidth-bound, and repeatedly accessing photos from it, or even queuing multiple requests for specific photos, caused slowdown and had to be worked around.
 - 2GB of RAM meant that holding all (or even a reasonable fraction) of photos from the Photo Library in memory efficiently was not possible, and so batch processing and converting to simplified representations of the photos as soon as possible was necessary. 
-<!---
---> 
 
 ## Approach 
 ______
