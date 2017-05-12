@@ -58,9 +58,29 @@ TODO: [BEFORE FRIDAY] Rewrite to better address current approach.
 ## Results
 ______
 
-<!---
-TODO: [BEFORE FRIDAY] Fill in.
--->
+Our main achievement was a stable application that detects edges well and produces high-quality photo mosaics for any reference photo using a Photo Library of anywhere from 4 to 15,000 photos. Below, we've outlined further key results and observations about our application. 
+
+<p align="left">
+  <img width="350" height="350" src="https://hunt.blob.core.windows.net/web-images/parallel/threadwidth.png">
+  <em>A graph describing image selection speed-up as thread group width changed.</em>
+</p>
+
+In Metal, a thread group is a group of related threads that execute on a single compute unit, and share memory and barriers (similar to the CUDA paradigm of thread blocks). This is the graph of time taken in the image selection process as the thread group width for that particular process is varied. Speedup increases dramatically as the width approaches 32, and then gets slightly worse. We believe that with more than 32 threads, the amount of work assigned to each thread was so little that its benefit was outweighed by the _overhead of launching and maintaining these threads_. Also, a thread group width that was too large is bandwidth-bound in its memory access and can cause cache thrashing - to improve _spatial locality_, 32 threads is the ideal thread group width. 
+
+
+<p align="right">
+  <img width="350" height="350" src="https://hunt.blob.core.windows.net/web-images/parallel/distribution.png">
+  <em>A chart showing time spent on each portion of the algorithm's process.</em>
+</p>
+
+We timed each portion of the application's processing to try to understand where the application spent the most time. Our final iteration of the application demonstrated time spent as in the pie chart - it's clear to see that overhead, loading from file, and drawing outweigh computation time. This suggests that further optimization should look at reducing reliance on iOS functionality, as the arithmetic intensity of our application is currently quite low - the most time is spent on producing the appropriate input and output for our algorithm. 
+
+<p align="left">
+  <img width="350" height="350" src="https://hunt.blob.core.windows.net/web-images/parallel/competition.png">
+  <em>A graph describing performance of Mosaix (our application) against Mosaica and PhotoMosaic, the leading photo mosaic applications currently available in the App Store.</em>
+</p>
+
+For benchmarking purposes, we compared our application's performance against that of two of the most popular photo mosaic applications available in the App Store. All three applications have quality adjustment, so we adjusted the quality of the different applications until they produced visually simular quality of photo mosaics. It's clear that all three algorithms have fairly different algorithms for photo processing - for example, Photo Mosaic goes through the Photo Library _after_ a reference photo is picked, which indicates that it likely does all Photo Library processing as a per-photo diff relative to the reference photo. We timed how long each application required to create a photo mosaic after a reference photo was chosen, and found that our application was approximately _20x faster_ than either of the competitors.
 
 #### Features
  - Full graphic user interface with automatic photo library access and an in-app camera and photo selector.
