@@ -95,7 +95,7 @@ We compared our application's performance against that of two of the most popula
 ______
 - <a href="https://developer.apple.com/reference/">Apple Developer Documentation</a>
 - <a href="https://developer.apple.com/metal/">Metal Specification</a>
-
+- <a href="https://gist.github.com/matthiasnagel/fe7ed96dc66310c67b45fb759cf6de8c">UIImage Orientation</a>
 
 ## Work By Each Student 
 ______
