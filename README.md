@@ -7,11 +7,11 @@ ______
 
 
 1. [Summary](#summary)
-  - [Features](#features)
-  - [Demo](#demo)
+    - [Features](#features)
+    - [Demo](#demo)
 2. [Background](#background)
-  - [Platform Choice and Resources](#platform)
-  - [Major Challenges](#challenges)
+    - [Platform Choice and Resources](#platform)
+    - [Major Challenges](#challenges)
 3. [Approach](#approach)
 4. [Results](#results)
 5. [References](#references)
