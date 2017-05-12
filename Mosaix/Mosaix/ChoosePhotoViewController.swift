@@ -11,13 +11,13 @@ import Metal
 import AVFoundation
 
 class ChoosePhotoViewController: UIViewController, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
-    var pickedImages: [UIImage] = []
+    var video: AVURLAsset!
+    var pickedImage: UIImage!
     var imagePicker = UIImagePickerController()
     
     
     
     override func viewDidLoad() {
-        pickedImages = []
         super.viewDidLoad()
         
     }
@@ -51,34 +51,36 @@ class ChoosePhotoViewController: UIViewController, UINavigationControllerDelegat
         }
     }
     
-    func setPickedImagesToMovie(movie: URL) {
+    func setMovie(movie: URL) {
+        
         //break down into frame by frame
-        
-//        let video = AVURLAsset(url: movie)
-//        let length = video.duration
-//        let imgGenerator = AVAssetImageGenerator(asset: video)
-        
-        //save to self.pickedImages
-        
+        do {
+            self.video = AVURLAsset(url: movie)
+            let generator = AVAssetImageGenerator(asset: self.video)
+            try self.pickedImage = UIImage(cgImage: generator.copyCGImage(at: CMTimeMake(0, video.duration.timescale), actualTime: nil))
+        } catch {
+            print("Issue with taking frame of video.")
+        }
     }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
         if ((info[UIImagePickerControllerMediaType] as! String) == "public.movie") {
             //turn movie into an array of UIImages and save to self.pickedImages
-            setPickedImagesToMovie(movie: (info[UIImagePickerControllerMediaURL] as! URL))
+            setMovie(movie: (info[UIImagePickerControllerMediaURL] as! URL))
         }
         if ((info[UIImagePickerControllerMediaType] as! String) == "public.image") {
-            pickedImages.append((info[UIImagePickerControllerOriginalImage] as! UIImage))
-            dismiss(animated: true, completion: { self.performSegue(withIdentifier: "ChoosePhotoToCreateMosaic", sender: self)})
-        }else{
-            dismiss(animated: true, completion: nil)
+            pickedImage = (info[UIImagePickerControllerOriginalImage] as! UIImage)
+            
         }
+        
+        dismiss(animated: true, completion: { self.performSegue(withIdentifier: "ChoosePhotoToCreateMosaic", sender: self)})
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "ChoosePhotoToCreateMosaic" {
             if let CreateMosaicViewController = segue.destination as? CreateMosaicViewController {
-                CreateMosaicViewController.imagesArray = pickedImages
+                CreateMosaicViewController.video = self.video
+                CreateMosaicViewController.image = self.pickedImage
             }
         }
     }

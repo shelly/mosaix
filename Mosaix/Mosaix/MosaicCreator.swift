@@ -55,7 +55,7 @@ class MosaicCreator {
     init(reference: UIImage) {
         self.state = .NotStarted
         self.reference = reference
-        self.timer = MosaicCreationTimer(enabled: true)
+        self.timer = MosaicCreationTimer(enabled: false)
         self.imageSelector = MetalImageSelection(refImage: reference, timer: self.timer)
         
         self.totalGridSpaces = 0
@@ -176,9 +176,8 @@ class MosaicCreator {
                 }
                 step("Drawing onto Canvas")
                 self.state = .Complete
+                self.timer.complete(report: false)
                 complete()
-                step("Complete callback")
-                self.timer.complete(report: true)
                 
         })
     }

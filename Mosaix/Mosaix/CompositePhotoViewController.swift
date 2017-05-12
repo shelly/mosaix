@@ -5,11 +5,12 @@
 //
 
 import UIKit
+import AVFoundation
 
 class CompositePhotoViewController: UIViewController {
     
     var mosaicCreator: MosaicCreator!
-    var imagesArray: [UIImage]!
+    var video: AVURLAsset!
     @IBOutlet weak var compositePhoto: UIImageView! = UIImageView()
     @IBOutlet weak var saveButton: UIBarButtonItem! = UIBarButtonItem()
     var compositePhotoImage: UIImage = UIImage()
@@ -47,38 +48,29 @@ class CompositePhotoViewController: UIViewController {
     //                self.compositePhoto.image = self.mosaicCreator.compositeImage
                 })
             } else {
+                try self.mosaicCreator.begin(tick: {() -> Void in
+                    //                print("tick!")
+                    let newTime = CFAbsoluteTimeGetCurrent()
+                    if (newTime - lastRefresh > 0.25) {
+                        self.compositePhotoImage = self.mosaicCreator.compositeImage
+                        self.compositePhoto.image = self.compositePhotoImage
+                        lastRefresh = newTime
+                    }
+                }, complete: {() -> Void in
+                    // This will be called when the mosaic is complete.
+                    print("Mosaic complete!")
+                    
+                    self.compositePhotoImage = self.mosaicCreator.compositeImage
+                    self.compositePhoto.image = self.compositePhotoImage
+                    self.canSavePhoto = true
+
+                    self.results.append(self.mosaicCreator.compositeImage)
+
+                })
                 
-                var imgIndex: Int = 0
-                var canDoNext: Bool = true
-                var firstTime: Bool = true
-                
-                while (canDoNext && (imgIndex < self.imagesArray.count)) {
-                    canDoNext = false
-                    self.mosaicCreator.reference = self.imagesArray[imgIndex]
-                    try self.mosaicCreator.begin(tick: {() -> Void in
-                        //                print("tick!")
-                        let newTime = CFAbsoluteTimeGetCurrent()
-                        if (newTime - lastRefresh > 0.25) {
-                            self.compositePhotoImage = self.mosaicCreator.compositeImage
-                            self.compositePhoto.image = self.compositePhotoImage
-                            lastRefresh = newTime
-                        }
-                    }, complete: {() -> Void in
-                        // This will be called when the mosaic is complete.
-                        print("Mosaic complete!")
-                        if (firstTime) {
-                            self.compositePhotoImage = self.mosaicCreator.compositeImage
-                            self.compositePhoto.image = self.compositePhotoImage
-                            self.canSavePhoto = true
-                            firstTime = false
-                        }
-                        self.results.append(self.mosaicCreator.compositeImage)
-                        canDoNext = true
-                    })
-                    imgIndex += 1
-                }
             }
 
+        print("self.results.size", self.results.count)
         //TODO: if results array is larger than 1, create a video out of it and save it down 
             if (self.results.count > 1) {
                 saveResultAsMovie()
