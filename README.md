@@ -48,21 +48,55 @@ In particular, our choice of iOS 10 on iPhone 7 is driven mostly by the inclusio
 ## Approach 
 ______
 
-There were two main algorithms we parallelized.
+
+<p align="center">
+  <img src="https://hunt.blob.core.windows.net/web-images/parallel/pipeline.png">
+</p>
+
+We broke photo selection into three main, parallelizable sub-problems:
 <ol>
-  <li><em>Generating a reasonable representation of photos within the Photo Library so that we can efficiently detect what the best match for a particular subsection of our reference photo is.</em>
+<li><em><b>KPA Calculation:</b> generating a reasonable representation of photos within the Photo Library so that we can efficiently narrow down potential candidate matches for the reference photo without losing clarity in the resulting mosaic.</em>
   
-  We did this with a technique we called Ten Point Averaging (derivative of a nine point average system), which split each library photo into a 3x3 grid and found the average R, G, and B values in each subsection, as well as the average R, G, and B values for the entire image. We then created a 30-dimensional feature vector of these 10 numbers x 3 channels, and considered this as our representation of the image for candidate selection.
+  <p align="center">
+  <img width="500" src="https://hunt.blob.core.windows.net/web-images/parallel/kpa.png"><br/>
+  <em>A K=9-Point Average representation of an example image, stored as a 9-dimensional vector.</em>
+</p>
+  
+  We did this with a technique we called K-Point Averaging, which splits each library photo into a grid and finds the average R, G, and B values in each subsection, as well as the average R, G, and B values for the entire image. We then created a 3K-dimensional feature vector of these K numbers x 3 channels, and considered this as our representation of the image for candidate selection. An important fact is that this k-value is dynamic and can be adjusted on-demand for an increased ability to recognize and match curves and edges. <b>We initially hard-coded this value to K=9, plus one value for the overall average (leading to the naming scheme of TenPointAveraging across the app even though the final implementation defaults to K=25).</b>
+  
+  The implementation of KPA calculation for photo processing can be found in the first two kernels of <a>TenPointAveraging.metal</a>. Depending on the work-load, we take advantage of two different implementations; one requiring inter-thread communication but is overall more efficient for larger libraries and one that runs more quickly on smaller photo sets.
+  
   </li>
-  <li><em>Breaking down the reference photo into sections and choosing a single "best" image to represent each section in the composite image.</em>
+  <li><em><b>KPA Storage:</b> Finding the representation of the Photo Library to efficiently search 3K-dimensional space for the nearest neighbor.</em>
   
-  To choose a best image, each of the subsections of the reference photo reduce across the feature vectors of all of the photos in the photo library, attempting to identify candidate photos with lower absolute differences between their feature vectors. The resulting best fit is then used to replace that subsection of the photo. 
+  Our data structure containing all the KPA vectors must be stored in a way that lends to efficient, concurrent nearest-neighbor search when finding a potential candidate for a section of the reference photo. We tried a few different representations, each lending to a different algorithm for finding the vector(s) closest to the reference photo:
+  <ul>
+  <li>Dictionary Mapping (see <a href="https://github.com/shellyb/mosaix/blob/master/Mosaix/Mosaix/TPADictionary.swift">TPADictionary.swift</a>): Our first (naive) implementation stored all the KPA values as a mapping from local identifier (the unique string used by iOS to identify a photo) to a struct of the ten-point averages. This had an obvious advantage in that it was incredibly easy to program and reason about, but it made selection inefficient.</li>
+  <li>K-Dimensional Binary Search Trees (see <a href="https://github.com/shellyb/mosaix/blob/master/Mosaix/Mosaix/KDTree.swift">KDTree.swift</a>): Our next approach was storing the TPA structs inside nodes of a multi-dimensional binary search tree. At each level, the tree splits along a different value in the vector to divide the space in half along a different axis with each step in traversal.
+  
+  K-Dimensional binary search trees make insertion easy, but nearest-neighbor searching is difficult; it requires calculating the distance between the KPA vector of the reference photo and the best-so-far candidate photo, then using that distance as the radius of a  hypersphere and checking overlap at each level with the unexplored node to see if that side of the tree needed traversing as well. Additionally, we found that even in a library of 5,000 photos, the large constants of splitting along K (or even sqrt(K)) axes require searching up to 10% of the tree to find a single image.  </li>
+      <li>KPA Sequence (see <a href="https://github.com/shellyb/mosaix/blob/master/Mosaix/Mosaix/TPAArray.swift">TPAArray.swift</a>: Our final solution was inspired by the rapid speed-up when converting KPA calculation to a Metal kernel. As Metal only works with buffers and textures (multi-dimensional planar types), we would sacrifice any complexity benefits of a more advanced data structure, but would gain the benefit of being able to stream this data through a Metal kernel and take advantage of the relatively beefy GPU on the iPhone. As such, this representation is a one-dimensional array of unsigned, 32-bit integers that are easily passed to Metal.
+      
+The selection algorithm with regards to KPA Sequences is discussed in detail in the next section.
+  </li>
+  </ul>
+  </li>
+  <li><em><b>Selection</b>: mapping sections of the reference photo to candidates from the Photo Library.</em>
+  
+  Finally, we tackled the problem of actually generating a mosaic from a reference photo and KPA Storage. After experimenting with CPU- and GPU-based solutions, it was evident that using the Metal kernel would get us far better results than any thread-spawning technique. In <a href="https://github.com/shellyb/mosaix/blob/master/Mosaix/Mosaix/TenPointAveraging.metal">TenPointAveraging.metal</a> our two kernels for selection are `findPhotoNinePointAverage` and `findNearestMatches`:
+  <ul>
+   <li>
+   <b>findPhotoNinePointAverage</b>: This metal kernel does K-Point Averaging like the kernels above, but is re-engineered specifically to take many K-Point average samples at once. While it is more efficient to make a separate kernel call for each photo when pre-processing KPA values, we needed to split up the reference photo as defined by the user's grid size setting and find the KPA values for each square in that grid. This kernel interleaves across thread groups and, unlike the pre-processing kernel, does not require inter-thread communication.
+   </li>
+   <li>
+   <b>findNearestMatches</b>: Once we have the KPA values for each square of the grid in the reference photo, a final Metal kernel takes in sequences of TPA values both for the grid of the reference photo and for the photo library as a whole, performing a min-reduction across the squares of the differences of each value (essentially, a min-distance reduction across 3K-dimensional space).
+    
+While the full implications of this speed-up are detailed below, it's worth noting here that this reduction outperformed any other implementation of nearest-neighbor search (including k-dimensional binary search trees) to the point where selection became the least time-intensive portion of mosaic generation.
+   </li>
+  </ul>
   </li>
 </ol>
-
-<!---
-TODO: [BEFORE FRIDAY] Rewrite to better address current approach.
--->
+ 
  
 ## Results
 ______
