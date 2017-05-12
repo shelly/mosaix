@@ -6,16 +6,16 @@
 ______
 
 
-1. [Summary](#summary)
+### 1. [Summary](#summary)
   - [Features](#features)
   - [Demo](#demo)
-2. [Background](#background)
+### 2. [Background](#background)
   - [Platform Choice and Resources](#platform)
   - [Major Challenges](#challenges)
-3. [Approach](#approach)
-4. [Results](#results)
-5. [References](#references)
-6. [Work By Each Student](#work)
+### 3. [Approach](#approach)
+### 4. [Results](#results)
+### 5. [References](#references)
+### 6. [Work By Each Student](#work)
 
 ## <a name="summary">Summary</a>
 ______
