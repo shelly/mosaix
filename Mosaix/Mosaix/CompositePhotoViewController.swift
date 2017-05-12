@@ -5,14 +5,17 @@
 //
 
 import UIKit
+import AVFoundation
 
 class CompositePhotoViewController: UIViewController {
     
     var mosaicCreator: MosaicCreator!
+    var video: AVURLAsset!
     @IBOutlet weak var compositePhoto: UIImageView! = UIImageView()
     @IBOutlet weak var saveButton: UIBarButtonItem! = UIBarButtonItem()
     var compositePhotoImage: UIImage = UIImage()
     var canSavePhoto = false
+    var results: [UIImage] = []
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
@@ -40,24 +43,69 @@ class CompositePhotoViewController: UIViewController {
                     return
                 })
             } else {
-                try self.mosaicCreator.begin(tick: {() -> Void in
-                    let newTime = CFAbsoluteTimeGetCurrent()
-                    if (newTime - lastRefresh > 0.25) {
+                
+                if (self.video != nil) {
+                    makeMovie()
+                    
+                }
+                else {
+                    try self.mosaicCreator.begin(tick: {() -> Void in
+                        //                print("tick!")
+                        let newTime = CFAbsoluteTimeGetCurrent()
+                        if (newTime - lastRefresh > 0.25) {
+                            self.compositePhotoImage = self.mosaicCreator.compositeImage
+                            self.compositePhoto.image = self.compositePhotoImage
+                            lastRefresh = newTime
+                        }
+                    }, complete: {() -> Void in
+                        // This will be called when the mosaic is complete.
+                        print("Mosaic complete!")
+                        
                         self.compositePhotoImage = self.mosaicCreator.compositeImage
                         self.compositePhoto.image = self.compositePhotoImage
-                        lastRefresh = newTime
-                    }
-                }, complete: {() -> Void in
-                    // This will be called when the mosaic is complete.
-                    print("Mosaic complete!")
-                    self.compositePhotoImage = self.mosaicCreator.compositeImage
-                    self.compositePhoto.image = self.compositePhotoImage
-                    self.canSavePhoto = true
-                })
+                        self.canSavePhoto = true
+
+                    })
+                }
             }
+        
+            
         } catch {
             print("oh no")
         }
+    }
+    
+    func makeMosaic(generator: AVAssetImageGenerator, i : Int64) {
+        do {
+            print("i: \(i)")
+            var actual = CMTime()
+            let frameTime = CMTimeMake(i, self.video.duration.timescale)
+            let image = try UIImage(cgImage: generator.copyCGImage(at: frameTime, actualTime: &actual))
+            self.mosaicCreator.updateReference(new: image)
+            try self.mosaicCreator.begin(tick: {
+            }, complete: {() -> Void in
+                self.compositePhotoImage = self.mosaicCreator.compositeImage
+                self.compositePhoto.image = self.compositePhotoImage
+                self.canSavePhoto = true
+                self.savePhoto()
+                self.makeMosaic(generator: generator, i: i + 3000)
+            })
+        } catch {
+            print (error)
+        }
+    }
+    
+    func makeMovie() { //Make a movie out of self.video
+        do {
+            let generator = AVAssetImageGenerator(asset: self.video)
+            generator.appliesPreferredTrackTransform = true
+            generator.requestedTimeToleranceBefore = kCMTimeZero
+            generator.requestedTimeToleranceAfter = kCMTimeZero
+            try makeMosaic(generator: generator, i: 1752000)
+        } catch {
+            print("Issue with taking frame of video.")
+        }
+
     }
     
     override func didReceiveMemoryWarning() {

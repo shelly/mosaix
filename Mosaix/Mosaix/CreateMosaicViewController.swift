@@ -5,11 +5,13 @@
 //
 
 import UIKit
+import AVFoundation
 
 
 class CreateMosaicViewController: UIViewController {
     
     @IBOutlet weak var imageView: UIImageView!
+    var video: AVURLAsset!
     var image: UIImage!
     var mosaicCreator: MosaicCreator!
     @IBOutlet weak var qualitySlider: UISlider! = UISlider()
@@ -105,6 +107,7 @@ class CreateMosaicViewController: UIViewController {
         if segue.identifier == "CreateMosaicToCompositePhoto" {
             if let CompositePhotoViewController = segue.destination as? CompositePhotoViewController {
                 CompositePhotoViewController.mosaicCreator = mosaicCreator
+                CompositePhotoViewController.video = video
             }
         }
     }

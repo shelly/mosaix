@@ -35,11 +35,11 @@ struct MosaicCreationConstants {
 class MosaicCreator {
     
     var imageSelector : ImageSelection
-    private let reference : UIImage
+    var reference : UIImage
     private var state : MosaicCreationState
     private var _gridSizePoints : Int
     private var _quality : Int = (MosaicCreationConstants.qualityMax + MosaicCreationConstants.qualityMin)/2
-    private let compositeContext: CGContext
+    private var compositeContext: CGContext
     var timer : MosaicCreationTimer
     
     private var totalGridSpaces : Int
@@ -54,10 +54,34 @@ class MosaicCreator {
         }
     }
     
+    func updateReference(new: UIImage) {
+        
+        self.reference = new
+
+        self.totalGridSpaces = 0
+        self.gridSpacesFilled = 0
+        
+        self.imageSelector.updateRef(new: new)
+
+        
+        UIGraphicsBeginImageContextWithOptions(self.reference.size, false, 0)
+        self.compositeContext = UIGraphicsGetCurrentContext()!
+        UIGraphicsPopContext()
+        
+        
+        do {
+            self._gridSizePoints = 0
+            try self.setGridSizePoints((MosaicCreationConstants.gridSizeMax + MosaicCreationConstants.gridSizeMin)/2)
+        } catch {
+            print("error initializing grid size")
+        }
+        
+    }
+    
     init(reference: UIImage) {
         self.state = .NotStarted
         self.reference = reference
-        self.timer = MosaicCreationTimer(enabled: true)
+        self.timer = MosaicCreationTimer(enabled: false)
         self.imageSelector = MetalImageSelection(refImage: reference, timer: self.timer)
         
         self.totalGridSpaces = 0
@@ -118,9 +142,11 @@ class MosaicCreator {
     }
     
     func begin(tick : @escaping () -> Void, complete : @escaping () -> Void) throws -> Void {
+
 //        guard (self.state == .PreprocessingComplete || self.state == .Complete) else {
 //            throw MosaicCreationError.InvalidState
 //        }
+
         let step = self.timer.task("Photo Mosaic Generation")
         self.state = .InProgress
         let numRows = Int(self.reference.size.height) / self._gridSizePoints
@@ -173,7 +199,6 @@ class MosaicCreator {
                         }
                     }
                 }
-                
         })
     }
     
