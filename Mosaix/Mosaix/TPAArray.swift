@@ -2,7 +2,6 @@
 //  TPAArray.swift
 //  Mosaix
 //
-//  Created by Nathan Eliason on 5/9/17.
 //  Copyright © 2017 Nathan Eliason. All rights reserved.
 //
 

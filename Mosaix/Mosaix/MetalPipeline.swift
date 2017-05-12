@@ -2,7 +2,6 @@
 //  MetalPipeline.swift
 //  Mosaix
 //
-//  Created by Nathan Eliason on 5/11/17.
 //  Copyright © 2017 Nathan Eliason. All rights reserved.
 //
 

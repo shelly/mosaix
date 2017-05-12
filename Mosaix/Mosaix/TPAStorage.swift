@@ -2,7 +2,6 @@
 //  TPAStorage.swift
 //  Mosaix
 //
-//  Created by Nathan Eliason on 5/5/17.
 //  Copyright © 2017 Nathan Eliason. All rights reserved.
 //
 

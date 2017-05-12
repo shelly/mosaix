@@ -5,14 +5,23 @@
 //  Created by Nathan Eliason on 4/19/17.
 //  Copyright © 2017 Nathan Eliason. All rights reserved.
 //
-//
+
 
 #include <metal_stdlib>
 using namespace metal;
 
-
 // Thread ID == (thread position in thread group) + (thread group position in grid * threads per thread group)
 
+
+/**
+ * One of two methods for calculating the K-Point Average of an entire photo at once. This particular
+ * implementation requires no inter-thread communication and is best for smaller threadgroup sizes.
+ *
+ * This kernel is used for Photo Library pre-processing.
+ *
+ * Note that while this method retains the naming from 9-Point averaging, it takes in a parameter
+ * with the squaresInRow = sqrt(K) for K-Point averaging.
+ */
 kernel void findNinePointAverage(
     texture2d<float, access::read> image [[ texture(0) ]],
     device uint* result [[ buffer(0) ]],
@@ -56,6 +65,16 @@ kernel void findNinePointAverage(
     }
 }
 
+/**
+ * This second implementation of K-Point averaging performs the same calculation but is faster
+ * on larger library sizes and with more threads per threadgroup. However, it requires
+ * inter-thread communication.
+ *
+ * This kernel is used for Photo Library pre-processing.
+ *
+ * Note that while this method retains the naming from 9-Point averaging, it takes in a parameter
+ * with the squaresInRow = sqrt(K) for K-Point averaging.
+ */
 kernel void findNinePointAverageAcrossThreadGroups(
                                  texture2d<float, access::read> image [[ texture(0) ]],
                                  device uint* result [[ buffer(0) ]],
@@ -125,6 +144,18 @@ kernel void findNinePointAverageAcrossThreadGroups(
     }
 }
 
+
+/**
+ * This kernel is used to split up the given photo texture into a grid (as determined by gridSize) 
+ * and perform K-Point averaging on each square in the grid in one kernel call. This has a significant
+ * performance advantage to calling either of the above kernels for each square in the grid.
+ *
+ * This kernel is used when the user picks a reference photo to help match photos to sections
+ * of the reference image.
+ *
+ * Note that while this method retains the naming from 9-Point averaging, it takes in a parameter
+ * with the gridsAcross = sqrt(K) for K-Point averaging.
+ */
 kernel void findPhotoNinePointAverage(
      texture2d<float, access::read> image [[ texture(0) ]],
      device uint* params [[ buffer(0) ]],
@@ -169,6 +200,13 @@ kernel void findPhotoNinePointAverage(
     }
 }
 
+/**
+ * This kernel is used as the final step before drawing the completed photo mosaic. Once
+ * we have K-Point Averaging information for both the reference photo and the photo library
+ * (from KPA Storage) given as uint32 sequences, it performs a reduction on the "distance" 
+ * between each vertex and maps the result buffer to the index of the nearest neighbor 
+ * with respect to the given TPA vectors.
+ */
 kernel void findNearestMatches(
     device uint* refTPAs [[ buffer(0) ]],
     device uint* otherTPAs [[ buffer(1) ]],
@@ -188,7 +226,6 @@ kernel void findNearestMatches(
         for (int otherIndex = 0; otherIndex < otherTPACount; otherIndex++) {
             float diff = 0.0;
             for (int delta = 0; delta < pointsPerTPA; delta++) {
-//                diff += otherTPAs[otherIndex*pointsPerTPA + delta];
                 diff += (float(refTPAs[refTPAIndex*pointsPerTPA + delta]) - float(otherTPAs[otherIndex*pointsPerTPA + delta])) *
                         (float(refTPAs[refTPAIndex*pointsPerTPA + delta]) - float(otherTPAs[otherIndex*pointsPerTPA + delta]));
             }

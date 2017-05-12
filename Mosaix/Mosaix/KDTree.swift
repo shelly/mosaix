@@ -2,7 +2,6 @@
 //  KDTree.swift
 //  Mosaix
 //
-//  Created by Nathan Eliason on 5/5/17.
 //  Copyright © 2017 Nathan Eliason. All rights reserved.
 //
 
@@ -10,19 +9,19 @@ import Foundation
 import Photos
 
 /**
- *     27-Dimensional implementation of KD Trees.
+ *   K-Dimensional implementation of KD Trees.
+ *
+ *   Example when k=9:
  *     TPA = {
  *          [r, g, b], [r, g, b], [r, g, b],
  *          [r, g, b], [r, g, b], [r, g, b],
  *          [r, g, b], [r, g, b], [r, g, b]
  *     }
- *
  *     axis_order = [
  *          [ 0,  9, 18], [19,  1, 10], [11, 20,  2],
  *          [21,  3, 12], [13, 22,  4], [ 5, 14, 23],
  *          [15, 24,  6], [ 7, 16, 25], [26,  8, 17]
  *     ]
- *
  *     axis_order[i] = [i % 9][ (i + i/3 + i/9) % 3 ]
  *
  */
@@ -144,8 +143,8 @@ class KDTree : NSObject, NSCoding, TPAStorage {
 //    private func differenceAtLevel(_ left: TenPointAverage, _ right: TenPointAverage, atLevel: Int) -> Float {
 //        let gridRow : Int = (atLevel / 3) % 3
 //        let gridCol : Int = atLevel % 3
-////        let nextGridRow : Int = (gridRow + 1) % 3
-////        let nextGridCol : Int = (gridCol + 1) % 3
+//        let nextGridRow : Int = (gridRow + 1) % 3
+//        let nextGridCol : Int = (gridCol + 1) % 3
 //        let diff = Float(left.gridAvg[gridRow][gridCol] - right.gridAvg[gridRow][gridCol])
 //        return diff - 150
 //    }
