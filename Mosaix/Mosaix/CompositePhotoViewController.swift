@@ -25,28 +25,22 @@ class CompositePhotoViewController: UIViewController {
             var lastRefresh : CFAbsoluteTime = 0
             if (false) {
                 let benchmarker = MosaicBenchmarker(creator: self.mosaicCreator)
-                benchmarker.addVariable(name: "TPA Thread Width", next: {() -> Any? in
-                    self.mosaicCreator.imageSelector.tpa.threadWidth *= 2
-                    if (self.mosaicCreator.imageSelector.tpa.threadWidth > 64) {
+                var drawingThreads : Int = 1
+                benchmarker.addVariable(name: "Drawing Threads", next: {() -> Any? in
+                    if (drawingThreads > 16) {
                         return nil
                     }
-                    return self.mosaicCreator.imageSelector.tpa.threadWidth
-                })
-                benchmarker.addVariable(name: "Selection Thread Worker Pool Size", next: {() -> Any? in
-                    self.mosaicCreator.imageSelector.numThreads *= 2
-                    if (self.mosaicCreator.imageSelector.numThreads > 32) {
-                        return nil
-                    }
-                    return self.mosaicCreator.imageSelector.numThreads
+                    self.mosaicCreator.drawingThreads = drawingThreads
+                    drawingThreads *= 2
+                    return drawingThreads / 2
                 })
                 try benchmarker.begin(tick: {() -> Void in
-    //  var           self.compositePhoto.image = self.mosaicCreator.compositeImage
+                    return
                 }, complete: {() -> Void in
-    //                self.compositePhoto.image = self.mosaicCreator.compositeImage
+                    return
                 })
             } else {
                 try self.mosaicCreator.begin(tick: {() -> Void in
-    //                print("tick!")
                     let newTime = CFAbsoluteTimeGetCurrent()
                     if (newTime - lastRefresh > 0.25) {
                         self.compositePhotoImage = self.mosaicCreator.compositeImage
@@ -58,11 +52,11 @@ class CompositePhotoViewController: UIViewController {
                     print("Mosaic complete!")
                     self.compositePhotoImage = self.mosaicCreator.compositeImage
                     self.compositePhoto.image = self.compositePhotoImage
-                self.canSavePhoto = true
+                    self.canSavePhoto = true
                 })
             }
         } catch {
-            print("oh shit")
+            print("oh no")
         }
     }
     

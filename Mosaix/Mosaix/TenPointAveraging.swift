@@ -115,17 +115,17 @@ class TenPointAverage : NSObject, NSCoding {
 
 class TenPointAveraging: PhotoProcessor {
     private var inProgress : Bool
-    private var storage : TPAArray
+    static var storage : TPAArray = TPAArray()
     private static var imageManager : PHImageManager?
     private var totalPhotos : Int
     private var photosComplete : Int
     static var metal : MetalPipeline? = nil
     private var timer : MosaicCreationTimer
+    static private var loadedFromFile : Bool = false
     var threadWidth : Int = 1
     
     required init(timer: MosaicCreationTimer) {
         self.inProgress = false
-        self.storage = TPAArray()
         self.totalPhotos = 0
         self.photosComplete = 0
         self.timer = timer
@@ -144,7 +144,10 @@ class TenPointAveraging: PhotoProcessor {
         self.inProgress = true
         let step = timer.task("TPA Preprocessing")
         DispatchQueue.global(qos: .background).async {
-            self.loadStorageFromFile()
+            if (!TenPointAveraging.loadedFromFile) {
+                TenPointAveraging.loadedFromFile = true
+                self.loadStorageFromFile()
+            }
             step("Loading from file.")
             PHPhotoLibrary.requestAuthorization { (status) in
                 switch status {
@@ -155,16 +158,7 @@ class TenPointAveraging: PhotoProcessor {
                     step("Fetching albums.")
                     self.processAllPhotos(userAlbums: userAlbums, complete: {(changed: Bool) -> Void in
                         step("Processing photos")
-                        print("processed photos")
                         //Save to file
-                        print("Asset 1:")
-                        for i in 0 ..< TenPointAverageConstants.numCells {
-                            let baseIndex = (TenPointAverageConstants.numCells * 1 + i) * 3
-                            let one = self.storage.tpaData[baseIndex + 0]
-                            let two = self.storage.tpaData[baseIndex + 1]
-                            let thr = self.storage.tpaData[baseIndex + 2]
-                            print(" \(one), \(two), \(thr))")
-                        }
                         if (changed) {
                             self.saveStorageToFile()
                             step("Saving to file.")
@@ -183,43 +177,14 @@ class TenPointAveraging: PhotoProcessor {
     }
     
     func findNearestMatch(tpa: TenPointAverage) -> (String, Float)? {
-        return self.storage.findNearestMatch(to: tpa)
+        return TenPointAveraging.storage.findNearestMatch(to: tpa)
     }
     
     func findNearestMatches(results: [UInt32], rows: Int, cols: Int, complete: @escaping ([String]) -> Void) -> Void {
-        TenPointAveraging.metal!.processNearestAverages(refTPAs: results, otherTPAs: self.storage.tpaData, rows: rows, cols: cols, threadWidth: 32, complete: {(matchIndexes, diffs) -> Void in
-            print("Ok, we're done processing nearest averages. Asset \(matchIndexes[0])")
-            let numCells = TenPointAverageConstants.gridsAcross * TenPointAverageConstants.gridsAcross
-            for j in 1 ..< 3 {
-                var diff : Decimal = 0.0
-                print("figuring out index \(j). Chose Asset \(matchIndexes[j]) (id=\(self.storage.tpaIds[Int(matchIndexes[j])]))")
-                for i in 0 ..< numCells {
-                    let baseIndex = (numCells * Int(matchIndexes[j]) + i) * 3
-                    let one = self.storage.tpaData[baseIndex + 0]
-                    let two = self.storage.tpaData[baseIndex + 1]
-                    let thr = self.storage.tpaData[baseIndex + 2]
-                    let refIndex = (numCells + j) * i
-                    let un = results[refIndex]
-                    let dos = results[refIndex + 1]
-                    let tres = results[refIndex + 2]
-                    print(" (\(one), \(two), \(thr)) vs (\(un), \(dos), \(tres))")
-                    diff += pow(Decimal(one) - Decimal(un), 2) + pow(Decimal(two) - Decimal(dos), 2) + pow(Decimal(thr) - Decimal(tres), 2)
-                }
-                print(" Reporting diff of \(diffs[j]). Actually, it's \(diff)")
-            }
-            
-            var assetIds : [String] = []
-            for i in 0 ..< matchIndexes.count {
-                let index: Int = Int(matchIndexes[i])
-                assetIds.append(self.storage.tpaIds[index])
-            }
-            
-            
-//            complete(matchIndexes.map({(tpaIndex) -> String in
-//                
-//                return self.storage.tpaIds[Int(tpaIndex)]
-//            }))
-            complete(assetIds)
+        TenPointAveraging.metal!.processNearestAverages(refTPAs: results, otherTPAs: TenPointAveraging.storage.tpaData, rows: rows, cols: cols, threadWidth: 32, complete: {(matchIndexes) -> Void in
+            complete(matchIndexes.map({(tpaIndex) -> String in
+                return TenPointAveraging.storage.tpaIds[Int(tpaIndex)]
+            }))
         })
     }
     
@@ -229,7 +194,6 @@ class TenPointAveraging: PhotoProcessor {
         userAlbums.enumerateObjects({(collection: PHAssetCollection, albumIndex: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
             stop.pointee = true
             let options = PHFetchOptions()
-//            let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: ["8B2771E5-C81A-46D9-B9CC-799256008AB1/L0/001", "2E78586A-BC28-49B6-BAEF-A7692C8126D0/L0/001"], options: options)
             let fetchResult = PHAsset.fetchAssets(in: collection, options: options)
             self.totalPhotos = fetchResult.count
             self.photosComplete = 0
@@ -244,7 +208,7 @@ class TenPointAveraging: PhotoProcessor {
             }
             
             fetchResult.enumerateObjects({(asset: PHAsset, index: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
-                if (asset.mediaType == .image && !self.storage.isMember(asset.localIdentifier)) {
+                if (asset.mediaType == .image && !TenPointAveraging.storage.isMember(asset.localIdentifier)) {
                     //Asynchronously grab image and save the values.
                     changed = true
                     let options = PHImageRequestOptions()
@@ -255,7 +219,7 @@ class TenPointAveraging: PhotoProcessor {
                                     if (result != nil) {
                                         self.processPhoto(image: result!.cgImage!, synchronous: true, complete: {(tpa) -> Void in
                                             if (tpa != nil) {
-                                                self.storage.insert(asset: asset.localIdentifier, tpa: tpa!)
+                                                TenPointAveraging.storage.insert(asset: asset.localIdentifier, tpa: tpa!)
                                             }
                                             step()
                                         })
@@ -322,11 +286,11 @@ class TenPointAveraging: PhotoProcessor {
 
         let fileURL = try! FileManager.default
             .url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
-            .appendingPathComponent(String(TenPointAverageConstants.gridsAcross) + self.storage.pListPath)
+            .appendingPathComponent(String(TenPointAverageConstants.gridsAcross) + TenPointAveraging.storage.pListPath)
         
         if let stored = NSKeyedUnarchiver.unarchiveObject(withFile: fileURL.path) as? TPAArray {
             
-            self.storage = stored 
+            TenPointAveraging.storage = stored
             print("self.storage successfully loaded from file.\n")
             
         }
@@ -336,11 +300,11 @@ class TenPointAveraging: PhotoProcessor {
         
         print("Trying to save storage to file.\n")
         
-        let toStore = NSKeyedArchiver.archivedData(withRootObject: self.storage)
+        let toStore = NSKeyedArchiver.archivedData(withRootObject: TenPointAveraging.storage)
         
         let fileURL = try! FileManager.default
             .url(for: .cachesDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
-            .appendingPathComponent(String(TenPointAverageConstants.gridsAcross) + self.storage.pListPath)
+            .appendingPathComponent(String(TenPointAverageConstants.gridsAcross) + TenPointAveraging.storage.pListPath)
         
         do {
             try toStore.write(to: fileURL)

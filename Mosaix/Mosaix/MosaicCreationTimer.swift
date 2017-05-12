@@ -83,7 +83,7 @@ class MosaicBenchmarker {
     }
     
     func begin(tick: @escaping () -> Void, complete: @escaping () -> Void) throws -> Void {
-        //Initialize all conditions and variablesdffd
+        //Initialize all conditions and variables
         try self.creator.preprocess(complete: {() -> Void in
             for (_, next) in self.conditions {
                 _ = next()
@@ -103,11 +103,11 @@ class MosaicBenchmarker {
                 //finish up
                 complete()
             } else {
-//                print("    Running trial \(trialNum)/\(numTrials)")
+                print("    Running trial \(trialNum)/\(numTrials)")
                 do {
                     try self.creator.begin(tick: tick, complete: {() -> Void in
                         let trialTime = self.creator.timer.overallTaskTime(for: "Photo Mosaic Generation")
-//                        print("      Trial \(trialNum) took \(trialTime!)s")
+                        print("      Trial \(trialNum) took \(trialTime!)s")
                         trialNum += 1
                         avgTime += trialTime! / Double(numTrials)
                         runNextTrial(varName: varName, complete: {() -> Void in

@@ -45,6 +45,8 @@ class MosaicCreator {
     private var totalGridSpaces : Int
     private var gridSpacesFilled : Int
     
+    var drawingThreads : Int
+    
     var compositeImage : UIImage {
         get {
             let cgImage = self.compositeContext.makeImage()!
@@ -60,6 +62,7 @@ class MosaicCreator {
         
         self.totalGridSpaces = 0
         self.gridSpacesFilled = 0
+        self.drawingThreads = 1
         
         UIGraphicsBeginImageContextWithOptions(self.reference.size, false, 0)
         self.compositeContext = UIGraphicsGetCurrentContext()!
@@ -115,20 +118,17 @@ class MosaicCreator {
     }
     
     func begin(tick : @escaping () -> Void, complete : @escaping () -> Void) throws -> Void {
-        guard (self.state == .PreprocessingComplete || self.state == .Complete) else {
-            throw MosaicCreationError.InvalidState
-        }
+//        guard (self.state == .PreprocessingComplete || self.state == .Complete) else {
+//            throw MosaicCreationError.InvalidState
+//        }
         let step = self.timer.task("Photo Mosaic Generation")
-//        print("Beginning Mosaic generation")
         self.state = .InProgress
         let numRows = Int(self.reference.size.height) / self._gridSizePoints
         let numCols = Int(self.reference.size.width) / self._gridSizePoints
         self.totalGridSpaces = numRows * numCols
-        print("Total grid spaces: \(self.totalGridSpaces)")
         self.gridSpacesFilled = 0
         try self.imageSelector.select(gridSizePoints: self._gridSizePoints, numGridSpaces: self.totalGridSpaces, numRows: numRows, numCols: numCols, quality: self._quality, onSelect:
             {(assetIds) -> Void in
-                //                print("Found \(assetIds.count) asset IDs.")
                 step("Selecting nearest matches")
                 var assetData : [String : PHAsset] = [:]
                 let choiceAssets = PHAsset.fetchAssets(withLocalIdentifiers: assetIds, options: nil)
@@ -138,41 +138,26 @@ class MosaicCreator {
                 
                 let imageManager = PHImageManager()
                 step("Retrieving Local Identifiers")
-                print("gridSize: \(self._gridSizePoints)")
-                print("image width: \(self.reference.size.width), height: \(self.reference.size.height)")
-                print("rows: \(numRows), cols: \(numCols)")
-                print("Have \(assetIds.count)")
                 
-                let numThreads = 4;
                 var squaresComplete = 0
-                for threadIndex in 0 ..< numThreads {
+                for threadIndex in 0 ..< self.drawingThreads {
                     DispatchQueue.global(qos: .userInitiated).async {
-                        for squareId in stride(from: threadIndex, to: numRows * numCols, by: numThreads) {
+                        for squareId in stride(from: threadIndex, to: numRows * numCols, by: self.drawingThreads) {
                             let col = squareId % numCols
                             let row = squareId / numCols
                             let x = col * self._gridSizePoints
                             let y = row * self._gridSizePoints
+                            
                             //Make sure that we cover the whole image and don't go over!
                             let rectWidth = min(Int(self.reference.size.width) - x, self._gridSizePoints)
                             let rectHeight = min(Int(self.reference.size.height) - y, self._gridSizePoints)
-                            if (rectWidth < 0 || rectHeight < 0) {
-                                print("Warning: (\(row),\(col)) mapping to (\(x),\(y)) <-> (\(rectWidth), \(rectHeight))")
-                            }
-                            //                        print("width \(rectWidth), height \(rectHeight)")
+                            
                             let targetSize = CGSize(width: rectWidth, height: rectHeight)
-                            //                        print("requesting image of size \(targetSize)")
                             let options = PHImageRequestOptions()
-                            //                        options.isSynchronous = true
-                            //                        print("requesting asset \(row*numCols + col)/\(assetIds.count)")
-                            //                        print("with assetId \(assetIds[row*numCols + col] )")
-                            //                        if (col == 0) {
-                            //                            print("start of row. Asset ID \(assetIds[row*numCols + col])")
-                            //                        }
                             imageManager.requestImage(for: assetData[assetIds[row*numCols + col]]!, targetSize: targetSize, contentMode: PHImageContentMode.default, options: options, resultHandler: {(result, info) -> Void in
                                 DispatchQueue.main.async {
                                     UIGraphicsPushContext(self.compositeContext)
                                     let drawRect = CGRect(x: x, y: y, width: Int(rectWidth), height: Int(rectHeight))
-                                    //                            print("drawing to \(drawRect)")
                                     result!.draw(in: drawRect)
                                     UIGraphicsPopContext()
                                     tick()
@@ -180,12 +165,10 @@ class MosaicCreator {
                                     if (squaresComplete == numRows * numCols) {
                                         step("Drawing onto Canvas")
                                         self.state = .Complete
-                                        complete()
-                                        step("Complete callback")
                                         self.timer.complete(report: true)
+                                        complete()
                                     }
                                 }
-                                //                            print("drawn!")
                             })
                         }
                     }

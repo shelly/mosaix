@@ -174,7 +174,6 @@ kernel void findNearestMatches(
     device uint* otherTPAs [[ buffer(1) ]],
     device uint* result  [[ buffer(2) ]],
     device uint* params  [[ buffer(3) ]],
-    device float* diffs   [[ buffer(4) ]],
     uint threadId [[ thread_position_in_grid ]],
     uint numThreads [[ threads_per_grid ]]
 ) {
@@ -182,28 +181,6 @@ kernel void findNearestMatches(
     const int pointsPerTPA = numCells * 3;
     int refTPACount = params[1] / pointsPerTPA;
     int otherTPACount = params[2] / pointsPerTPA;
-    
-    
-//    if (threadId < refTPACount) {
-//        int minDiff = 0;
-//        int minTPAId = 0;
-//        for (int otherIndex = 0; otherIndex < otherTPACount; otherIndex++) {
-//            int diff = 0;
-//            for (int i = 0; i < pointsPerTPA; i++) {
-//                diff += int(pow(float(int(refTPAs[pointsPerTPA*threadId + i]) - int(otherTPAs[pointsPerTPA*otherIndex + i])), 2.0));
-//            }
-//            if (diff < minDiff || minTPAId == 0) {
-//                minDiff = diff;
-//                minTPAId = otherIndex;
-//            }
-//            if (otherIndex < refTPACount) {
-//                diffs[otherIndex] = minDiff;
-//            }
-//        }
-//        result[threadId] = minTPAId;
-////        diffs[threadId] = minDiff;
-//    }
-
     
     for (int refTPAIndex = threadId; refTPAIndex < refTPACount; refTPAIndex += numThreads) {
         uint minTPAId = 0;
@@ -221,7 +198,6 @@ kernel void findNearestMatches(
             }
         }
         result[refTPAIndex] = minTPAId;
-        diffs[refTPAIndex] = float(minDiff);
     }
 }
 
