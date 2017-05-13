@@ -53,7 +53,7 @@ Mosaix made the most sense on a mobile device because that's the platform on whi
 In particular, our choice of iOS 10 on iPhone 7 is driven mostly by the inclusion of the Metal framework, which gave us unprecendented low-level access to the GPU on the iPhone 7. Not only was the hardware specifically designed with photo processing in mind, but the software gave us complete control over multi-threading and image processing and a simple way of accessing a library of existing photos.
 
 #### <a name="challenges">Major Challenges</a>
-- We'd never worked with Swift 3 or Metal before, and iOS apps are developed using a unique design paradigm, and custom interfaces and data types with restrictions upon how and when they can be used. For example, photos in the Photo Library are stored as and are accessible only as PHAssets, whereas Metal primarily supports MTLTextures and all transformations performed upon photos had to be upon textures in order to run in the kernel.  
+- We'd never worked with Swift or Metal before, and iOS apps are developed using a unique design paradigm, and custom interfaces and data types with restrictions upon how and when they can be used. For example, photos in the Photo Library are stored as and are accessible only as PHAssets, whereas Metal primarily supports MTLTextures and all transformations performed upon photos had to be upon textures in order to run in the kernel.  
 - The iPhone 7 is quad-core, but application usage is restricted, and there is no interface to directly schedule jobs to cores. If an application uses too much power, the application is throttled down, so achieving speedup required a balance between utilizing resources and overreaching our limits. 
 - Fetching photos from the Photo Library is bandwidth-bound, and repeatedly accessing photos from it, or even queuing multiple requests for specific photos, caused slowdown and had to be worked around.
 - 2GB of RAM meant that holding all (or even a reasonable fraction) of photos from the Photo Library in memory efficiently was not possible, and so batch processing and converting to simplified representations of the photos as soon as possible was necessary. 
@@ -114,7 +114,7 @@ While the full implications of this speed-up are detailed below, it's worth noti
 ## <a name="results">Results</a>
 ______
 
-Our main achievement was a stable application that detects edges well and produces high-quality photo mosaics for any reference photo using a Photo Library of anywhere from 4 to 15,000 photos. Below, we've outlined further key results and observations about our application. We wrote <a href="https://github.com/shellyb/mosaix/blob/master/Mosaix/Mosaix/MosaicCreationTimer.swift">a benchmarking framework</a> to time different sections of our code, and identify what settings of thread-related parameters was optimaml. 
+Our main achievement was a stable application that detects edges well and produces high-quality photo mosaics for any reference photo using a Photo Library of anywhere from 4 to 15,000 photos. Below, we've outlined further key results and observations about our application. We wrote <a href="https://github.com/shellyb/mosaix/blob/master/Mosaix/Mosaix/MosaicCreationTimer.swift">a benchmarking framework</a> to time different sections of our code, and identify what settings of thread-related parameters was optimal. 
 
 <p align="center">
   <img width="350" src="https://hunt.blob.core.windows.net/web-images/parallel/threadwidth.png"><br/>
